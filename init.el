@@ -55,6 +55,9 @@
 (setq org-mobile-directory (expand-file-name "MobileOrg" dropbox-dir))
 (setq org-mobile-inbox-for-pull (expand-file-name "flagged.org" org-directory))
 
+;; Enable column number mode everywhere.
+(setq column-number-mode t)
+
 ;; Separate custom file.
 (when (not (featurep 'aquamacs))
   (setq custom-file "~/.emacs.d/emacs-custom.el")
