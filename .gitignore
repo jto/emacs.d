@@ -1,1 +1,4 @@
 emacs-custom.el
+.smex-items
+elpa/
+places
