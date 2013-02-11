@@ -37,7 +37,8 @@
     ;; Disable read-only prompt in Geiser.
     ;; The read-only prompt doesn't play nicely with custom REPLs
     ;; such as in SICP.
-    (setq geiser-repl-read-only-promp-p nil)))
+    (setq geiser-repl-read-only-promp-p nil)
+    (add-hook 'geiser-repl-mode-hook 'paredit-mode)))
 
 ;; Separate custom file.
 (when (not (featurep 'aquamacs))
