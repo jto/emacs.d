@@ -32,13 +32,27 @@
   (menu-bar-mode))
 
 ;; Geiser customizations (Scheme Slime-like environment)
+;; Disable read-only prompt in Geiser.
+;; The read-only prompt doesn't play nicely with custom REPLs
+;; such as in SICP.
+(setq geiser-repl-read-only-promp-p nil)
 (eval-after-load "geiser"
   (progn
-    ;; Disable read-only prompt in Geiser.
-    ;; The read-only prompt doesn't play nicely with custom REPLs
-    ;; such as in SICP.
-    (setq geiser-repl-read-only-promp-p nil)
-    (add-hook 'geiser-repl-mode-hook 'paredit-mode)))
+    (add-hook 'geiser-repl-mode-hook 'paredit-mode)
+    ))
+
+;; Graphviz customizations
+(setq graphviz-dot-auto-indent-on-braces nil)
+(setq graphviz-dot-auto-indent-on-semi nil)
+(setq graphviz-dot-indent-width 4)
+
+;; Org-mode and mobile-org customizations
+;; set org-mobile-encryption-password in custom
+(setq dropbox-dir (expand-file-name "~/Dropbox"))
+(setq org-directory (expand-file-name "org" dropbox-dir))
+(setq org-agenda-file (expand-file-name "agendafiles.txt" org-directory))
+(setq org-mobile-directory (expand-file-name "MobileOrg" dropbox-dir))
+(setq org-mobile-inbox-for-pull (expand-file-name "flagged.org" org-directory))
 
 ;; Separate custom file.
 (when (not (featurep 'aquamacs))
