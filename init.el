@@ -65,7 +65,9 @@
 
 ;; Time Emacs startup complete.
 (message "Emacs startup in %ds"
-	 (destructuring-bind (hi lo ms) (current-time)
-			     (- (+ hi lo)
-				(+ (first *emacs-load-start*)
-				   (second *emacs-load-start*)))))
+         (let ((time (current-time)))
+           (let ((hi (first time))
+                 (lo (second time)))
+             (- (+ hi lo)
+                (+ (first *emacs-load-start*)
+                   (second *emacs-load-start*))))))
