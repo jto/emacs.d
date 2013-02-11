@@ -4,7 +4,8 @@
 ;; From http://a-nickels-worth.blogspot.com/2007/11/effective-emacs.html
 (defvar *emacs-load-start* (current-time))
 
-;; Initialize with packages. Most importantly, emacs-starter-kit for sane defaults.
+;; Initialize with packages. Most importantly, emacs-starter-kit for
+;; sane defaults.
 (require 'package)
 (add-to-list 'package-archives
 	     '("marmalade" . "http://marmalade-repo.org/packages/") t)
