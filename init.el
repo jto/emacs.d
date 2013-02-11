@@ -5,8 +5,9 @@
 (defvar *emacs-load-start* (current-time))
 
 ;; Separate custom file.
-(setq custom-file "~/.emacs.d/custom.el")
-(load custom-file 'noerror)
+(when (not (featurep 'aquamacs))
+  (setq custom-file "~/.emacs.d/emacs-custom.el")
+  (load custom-file 'noerror))
 
 ;; Time Emacs startup complete.
 (message "Emacs startup in %ds"
