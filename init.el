@@ -31,6 +31,14 @@
 (when window-system
   (menu-bar-mode))
 
+;; Geiser customizations (Scheme Slime-like environment)
+(eval-after-load "geiser"
+  (progn
+    ;; Disable read-only prompt in Geiser.
+    ;; The read-only prompt doesn't play nicely with custom REPLs
+    ;; such as in SICP.
+    (setq geiser-repl-read-only-promp-p nil)))
+
 ;; Separate custom file.
 (when (not (featurep 'aquamacs))
   (setq custom-file "~/.emacs.d/emacs-custom.el")
