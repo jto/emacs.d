@@ -27,6 +27,10 @@
   (when (not (package-installed-p p))
     (package-install p)))
 
+;; I like the menu.
+(when window-system
+  (menu-bar-mode))
+
 ;; Separate custom file.
 (when (not (featurep 'aquamacs))
   (setq custom-file "~/.emacs.d/emacs-custom.el")
