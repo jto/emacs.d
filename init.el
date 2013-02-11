@@ -4,9 +4,9 @@
 ;; From http://a-nickels-worth.blogspot.com/2007/11/effective-emacs.html
 (defvar *emacs-load-start* (current-time))
 
-
-
-
+;; Separate custom file.
+(setq custom-file "~/.emacs.d/custom.el")
+(load custom-file 'noerror)
 
 ;; Time Emacs startup complete.
 (message "Emacs startup in %ds"
