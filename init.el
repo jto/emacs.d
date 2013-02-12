@@ -24,9 +24,29 @@
 (add-to-list '*my-packages* 'geiser)
 (add-to-list '*my-packages* 'graphviz-dot-mode)
 (add-to-list '*my-packages* 'autopair)
+(add-to-list '*my-packages* 'pde)
 (dolist (p *my-packages*)
   (when (not (package-installed-p p))
     (package-install p)))
+
+;; Autoloads
+
+;; Modes
+(add-to-list 'auto-mode-alist '("\\.\\([pP][Llm]\\)\\'" . cperl-mode))
+(add-to-list 'interpreter-mode-alist '("perl" . cperl-mode))
+(add-to-list 'interpreter-mode-alist '("perl5" . cperl-mode))
+(add-to-list 'interpreter-mode-alist '("miniperl" . cperl-mode))
+
+;; CPerl customizations
+(defun my-cperl-mode-hook ()
+  (setq cperl-indent-level 4)
+  (setq cperl-close-paren-offset -4)
+  (setq cperl-continued-statement-offset 4)
+  (setq cperl-indent-parens-as-block t)
+  (setq cperl-tab-always-indent t)
+  (auto-fill-mode 0)
+  )
+(add-hook 'cperl-mode-hook 'my-cperl-mode-hook)
 
 ;; I like the menu.
 (when window-system
