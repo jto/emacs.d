@@ -24,10 +24,11 @@
 (add-to-list '*my-packages* 'geiser)
 (add-to-list '*my-packages* 'graphviz-dot-mode)
 (add-to-list '*my-packages* 'autopair)
-(add-to-list '*my-packages* 'pde)
 (dolist (p *my-packages*)
   (when (not (package-installed-p p))
-    (package-install p)))
+    (condition-case-unless-debug err
+        (package-install p)
+      (error (message "%s" (error-message-string err))))))
 
 ;; Autoloads
 
