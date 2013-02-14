@@ -82,10 +82,10 @@
 (defun fixssh ()
   "Run fixssh script for use in GNU screen with SSH agent and X forwarding.
 
-   Requires grabssh to put SSH variables in ~/bin/fixssh_$HOSTNAME."
+   Requires grabssh to put SSH variables in ~/usr/bin/fixssh_$HOSTNAME."
   (interactive)
   (save-excursion
-    (let ((buffer (find-file-noselect (concat "~/bin/fixssh_"
+    (let ((buffer (find-file-noselect (concat "~/usr/bin/fixssh_"
                                               (getenv "HOSTNAME")))))
       (set-buffer buffer)
       (setq buffer-read-only t)
