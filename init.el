@@ -79,14 +79,20 @@
 ;; Enable column number mode everywhere.
 (setq column-number-mode t)
 
-(defun fixssh ()
-  "Run fixssh script for use in GNU screen with SSH agent and X forwarding.
+(defcustom fixssh-data-file 
+  (concat "~/usr/bin/fixssh_"
+          (getenv "HOSTNAME"))
+  "The name of the file that contains environment info from grabssh."
+  :type '(string))
 
-   Requires grabssh to put SSH variables in ~/usr/bin/fixssh_$HOSTNAME."
+(defun fixssh ()
+  "Fix SSH agent and X forwarding in GNU screen.
+
+Requires grabssh to put SSH variables in the file identified by
+`fixssh-data-file'."
   (interactive)
   (save-excursion
-    (let ((buffer (find-file-noselect (concat "~/usr/bin/fixssh_"
-                                              (getenv "HOSTNAME")))))
+    (let ((buffer (find-file-noselect fixssh-data-file)))
       (set-buffer buffer)
       (setq buffer-read-only t)
       (goto-char (point-min))
