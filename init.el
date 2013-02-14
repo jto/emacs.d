@@ -79,6 +79,24 @@
 ;; Enable column number mode everywhere.
 (setq column-number-mode t)
 
+(defun fixssh ()
+  "Run fixssh script for use in GNU screen with SSH agent and X forwarding.
+
+   Requires grabssh to put SSH variables in ~/bin/fixssh_$HOSTNAME."
+  (interactive)
+  (save-excursion
+    (let ((buffer (find-file-noselect (concat "~/bin/fixssh_"
+                                              (getenv "HOSTNAME")))))
+      (set-buffer buffer)
+      (setq buffer-read-only t)
+      (goto-char (point-min))
+      (while (re-search-forward
+              "\\([A-Z_][A-Z0-9_]*\\) *= *\"\\([^\"]*\\)\"" nil t)
+        (let ((key (match-string 1))
+              (val (match-string 2)))
+          (setenv key val)))
+      (kill-buffer buffer))))
+
 ;; Separate custom file.
 (when (not (featurep 'aquamacs))
   (setq custom-file "~/.emacs.d/emacs-custom.el")
