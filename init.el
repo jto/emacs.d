@@ -9,6 +9,8 @@
 (require 'package)
 (add-to-list 'package-archives
 	     '("marmalade" . "http://marmalade-repo.org/packages/") t)
+(add-to-list 'package-archives
+             '("melpa" . "http://melpa.milkbox.net/packages/") t)
 (package-initialize)
 
 ;; Create a list of packages to install if not present.
@@ -24,6 +26,7 @@
 (add-to-list '*my-packages* 'geiser)
 (add-to-list '*my-packages* 'graphviz-dot-mode)
 (add-to-list '*my-packages* 'autopair)
+(add-to-list '*my-packages* 'melpa)
 (dolist (p *my-packages*)
   (when (not (package-installed-p p))
     (condition-case-unless-debug err
@@ -38,6 +41,9 @@
 (add-to-list 'interpreter-mode-alist '("perl5" . cperl-mode))
 (add-to-list 'interpreter-mode-alist '("miniperl" . cperl-mode))
 (add-to-list 'auto-mode-alist '("\\.gv\\'" . graphviz-dot-mode))
+
+;; Add paredit-mode to IELM
+(add-hook 'ielm-mode-hook 'paredit-mode)
 
 ;; CPerl customizations
 (defun my-cperl-mode-hook ()
