@@ -4,6 +4,20 @@
 ;; From http://a-nickels-worth.blogspot.com/2007/11/effective-emacs.html
 (defvar *emacs-load-start* (current-time))
 
+;; Add /usr/local/bin to env path
+(defun my-add-to-path (dirname)
+  "Prepend DIRNAME to $PATH.
+
+Do nothing if $PATH already contains DIRNAME.
+
+(fn DIRNAME)"
+  (let ((path (split-string (getenv "PATH") ":")))
+    (if (member dirname path)
+        (getenv "PATH")
+      (setenv "PATH"
+              (mapconcat 'identity (cons dirname path) ":")))))
+(my-add-to-path "/usr/local/bin")
+
 ;; Initialize with packages. Most importantly, emacs-starter-kit for
 ;; sane defaults.
 (require 'package)
