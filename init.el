@@ -20,6 +20,8 @@ Do nothing if $PATH already contains DIRNAME.
               (mapconcat 'identity (cons dirname path) ":")))))
 (my-add-to-path "/usr/local/bin")
 
+;; ===============================================
+
 ;; Initialize with packages. Most importantly, emacs-starter-kit for
 ;; sane defaults.
 (require 'package)
@@ -43,11 +45,18 @@ Do nothing if $PATH already contains DIRNAME.
 (add-to-list '*my-packages* 'graphviz-dot-mode)
 (add-to-list '*my-packages* 'autopair)
 (add-to-list '*my-packages* 'melpa)
+(add-to-list '*my-packages* 'exec-path-from-shell)
+(add-to-list '*my-packages* 'auctex)
 (dolist (p *my-packages*)
   (when (not (package-installed-p p))
     (condition-case-unless-debug err
         (package-install p)
       (error (message "%s" (error-message-string err))))))
+
+;; ===============================================
+
+(when (memq window-system '(mac ns))
+  (exec-path-from-shell-initialize))
 
 ;; ===============================================
 
@@ -81,6 +90,16 @@ Do nothing if $PATH already contains DIRNAME.
 ;; I like the menu.
 (when window-system
   (menu-bar-mode))
+
+;; Recent files
+(recentf-mode)
+
+;; Load auctex settings
+(when (featurep 'ns)
+  (setq TeX-PDF-mode t)
+  (setq TeX-view-program-list '(("Open" "open \"%o\"")))
+  (setq TeX-view-program-selection '((output-pdf "Open")))
+  )
 
 ;; ===============================================
 
