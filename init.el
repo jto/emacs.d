@@ -4,6 +4,8 @@
 ;; From http://a-nickels-worth.blogspot.com/2007/11/effective-emacs.html
 (defvar *emacs-load-start* (current-time))
 
+;; ===============================================
+
 ;; Add /usr/local/bin to env path
 (defun my-add-to-path (dirname)
   "Prepend DIRNAME to $PATH.
@@ -47,6 +49,8 @@ Do nothing if $PATH already contains DIRNAME.
         (package-install p)
       (error (message "%s" (error-message-string err))))))
 
+;; ===============================================
+
 ;; Autoloads
 
 ;; Modes
@@ -59,6 +63,8 @@ Do nothing if $PATH already contains DIRNAME.
 ;; Add paredit-mode to IELM
 (add-hook 'ielm-mode-hook 'paredit-mode)
 
+;; ===============================================
+
 ;; CPerl customizations
 (defun my-cperl-mode-hook ()
   (setq cperl-indent-level 4)
@@ -70,9 +76,13 @@ Do nothing if $PATH already contains DIRNAME.
   )
 (add-hook 'cperl-mode-hook 'my-cperl-mode-hook)
 
+;; ===============================================
+
 ;; I like the menu.
 (when window-system
   (menu-bar-mode))
+
+;; ===============================================
 
 ;; Geiser customizations (Scheme Slime-like environment)
 ;; Disable read-only prompt in Geiser.
@@ -84,10 +94,14 @@ Do nothing if $PATH already contains DIRNAME.
     (add-hook 'geiser-repl-mode-hook 'paredit-mode)
     ))
 
+;; ===============================================
+
 ;; Graphviz customizations
 (setq graphviz-dot-auto-indent-on-braces nil)
 (setq graphviz-dot-auto-indent-on-semi nil)
 (setq graphviz-dot-indent-width 4)
+
+;; ===============================================
 
 ;; Org-mode and mobile-org customizations
 ;; set org-mobile-encryption-password in custom
@@ -99,6 +113,8 @@ Do nothing if $PATH already contains DIRNAME.
 
 ;; Enable column number mode everywhere.
 (setq column-number-mode t)
+
+;; ===============================================
 
 (defcustom fixssh-data-file 
   (concat "~/usr/bin/fixssh_"
@@ -123,6 +139,116 @@ Requires grabssh to put SSH variables in the file identified by
               (val (match-string 2)))
           (setenv key val)))
       (kill-buffer buffer))))
+
+;; ===============================================
+
+;; Nifty functions from prelude package
+;; See emacsredux.com/blog
+
+(defun prelude-smart-open-line ()
+  "Insert an empty line after the current line.
+Position the cursor at its beginning, according to the current mode."
+  (interactive)
+  (move-end-of-line nil)
+  (newline-and-indent))
+
+(global-set-key [(shift return)] 'prelude-smart-open-line)
+
+(defun prelude-copy-file-name-to-clipboard ()
+  "Copy the current buffer file name to the clipboard."
+  (interactive)
+  (let ((filename (if (equal major-mode 'dired-mode)
+                      default-directory
+                    (buffer-file-name))))
+    (when filename
+      (kill-new filename)
+      (message "Copied buffer file name '%s' to the clipboard." filename))))
+
+(defun prelude-open-with ()
+  "Simple function that allows us to open the underlying
+file of a buffer in an external program."
+  (interactive)
+  (when buffer-file-name
+    (shell-command (concat
+                    (if (eq system-type 'darwin)
+                        "open"
+                      (read-shell-command "Open current file with: "))
+                    " "
+                    buffer-file-name))))
+
+(global-set-key (kbd "C-c o") 'prelude-open-with)
+
+(defun prelude-indent-buffer ()
+  "Indent the currently visited buffer."
+  (interactive)
+  (indent-region (point-min) (point-max)))
+
+(defun prelude-indent-region-or-buffer ()
+  "Indent a region if selected, otherwise the whole buffer."
+  (interactive)
+  (save-excursion
+    (if (region-active-p)
+        (progn
+          (indent-region (region-beginning) (region-end))
+          (message "Indented selected region."))
+      (progn
+        (prelude-indent-buffer)
+        (message "Indented buffer.")))))
+
+(global-set-key (kbd "C-M-\\") 'prelude-indent-region-or-buffer)
+
+(defun prelude-indent-defun ()
+  "Indent the current defun."
+  (interactive)
+  (save-excursion
+    (mark-defun)
+    (indent-region (region-beginning) (region-end))))
+
+(global-set-key (kbd "C-M-z") 'prelude-indent-defun)
+
+(defun prelude-google ()
+  "Google the selected region if any, display a query prompt otherwise."
+  (interactive)
+  (browse-url
+   (concat
+    "http://www.google.com/search?ie=utf-8&oe=utf-8&q="
+    (url-hexify-string (if mark-active
+         (buffer-substring (region-beginning) (region-end))
+       (read-string "Google: "))))))
+
+(defun prelude-visit-term-buffer ()
+  "Create or visit a terminal buffer."
+  (interactive)
+  (if (not (get-buffer "*ansi-term*"))
+      (progn
+        (split-window-sensibly (selected-window))
+        (other-window 1)
+        (ansi-term (getenv "SHELL")))
+    (switch-to-buffer-other-window "*ansi-term*")))
+
+(global-set-key (kbd "C-c t") 'visit-term-buffer)
+
+(defun prelude-kill-other-buffers ()
+  "Kill all buffers but the current one.
+Don't mess with special buffers."
+  (interactive)
+  (dolist (buffer (buffer-list))
+    (unless (or (eql buffer (current-buffer)) (not (buffer-file-name buffer)))
+      (kill-buffer buffer))))
+
+(defun prelude-delete-file-and-buffer ()
+  "Kill the current buffer and deletes the file it is visiting."
+  (interactive)
+  (let ((filename (buffer-file-name)))
+    (when filename
+      (if (vc-backend filename)
+          (vc-delete-file filename)
+        (progn
+          (delete-file filename)
+          (message "Deleted file %s" filename)
+          (kill-buffer))))))
+
+;; ===============================================
 
 ;; Separate custom file.
 (when (not (featurep 'aquamacs))
