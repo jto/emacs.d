@@ -53,6 +53,8 @@ Do nothing if $PATH already contains DIRNAME.
         (package-install p)
       (error (message "%s" (error-message-string err))))))
 
+(require 'autopair)
+
 ;; ===============================================
 
 (when (memq window-system '(mac ns))
@@ -76,12 +78,15 @@ Do nothing if $PATH already contains DIRNAME.
 
 ;; CPerl customizations
 (defun my-cperl-mode-hook ()
-  (setq cperl-indent-level 4)
-  (setq cperl-close-paren-offset -4)
-  (setq cperl-continued-statement-offset 4)
-  (setq cperl-indent-parens-as-block t)
-  (setq cperl-tab-always-indent t)
+  (setq cperl-indent-level                4
+        cperl-close-paren-offset         -4
+        cperl-continued-statement-offset  4
+        cperl-indent-parens-as-block      t
+        cperl-tab-always-indent           t
+        cperl-merge-trailing-else         nil
+        )
   (auto-fill-mode 0)
+  (autopair-mode 1)
   )
 (add-hook 'cperl-mode-hook 'my-cperl-mode-hook)
 
