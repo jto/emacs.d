@@ -106,6 +106,11 @@ Do nothing if $PATH already contains DIRNAME.
   (setq TeX-view-program-selection '((output-pdf "Open")))
   )
 
+(global-set-key (kbd "RET") 'newline-and-indent)
+(global-set-key (kbd "C-j") 'reindent-then-newline-and-indent)
+
+(global-set-key (kbd "C-c g") 'magit-status)
+
 ;; ===============================================
 
 ;; Geiser customizations (Scheme Slime-like environment)
