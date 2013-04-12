@@ -74,6 +74,7 @@ Do nothing if $PATH already contains DIRNAME.
 (add-to-list '*my-packages* 'melpa)
 (add-to-list '*my-packages* 'exec-path-from-shell)
 (add-to-list '*my-packages* 'auctex)
+(add-to-list '*my-packages* 'yasnippet)
 (dolist (p *my-packages*)
   (when (not (package-installed-p p))
     (condition-case-unless-debug err
@@ -81,6 +82,7 @@ Do nothing if $PATH already contains DIRNAME.
       (error (message "%s" (error-message-string err))))))
 
 (require 'autopair)
+(require 'yasnippet)
 
 ;; ===============================================
 
