@@ -6,6 +6,33 @@
 
 ;; ===============================================
 
+;; Utils from
+;; http://emacswiki.org/emacs/ElispCookbook
+(defun string/ends-with (s ending)
+  "return non-nil if string S ends with ENDING."
+  (let ((elength (length ending)))
+    (string= (substring s (- 0 elength)) ending)))
+(defun string/starts-with (s arg)
+  "returns non-nil if string S starts with ARG.  Else nil."
+  (cond ((>= (length s) (length arg))
+         (string-equal (substring s 0 (length arg)) arg))
+                    (t nil)))
+
+;; Add plugins to load path
+(let ((plugin-dir (expand-file-name "~/.emacs.d/plugins")))
+  (when (file-directory-p plugin-dir)
+    (when (not (memq plugin-dir load-path))
+      (add-to-list 'load-path plugin-dir))
+    (dolist (d (directory-files plugin-dir t))
+      (when (and (not (string/ends-with d "."))
+                 (not (string/ends-with d ".."))
+                 (not (memq d load-path))
+                 (file-directory-p d)
+                 )
+        (add-to-list 'load-path d)))))
+
+;; ===============================================
+
 ;; Add /usr/local/bin to env path
 (defun my-add-to-path (dirname)
   "Prepend DIRNAME to $PATH.
