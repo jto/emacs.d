@@ -1,0 +1,15 @@
+# -*- mode: snippet -*-
+# name: package
+# key: package
+# --
+package $1;
+
+use strict;
+use warnings;
+use utf8;
+
+# use base qw();
+
+$0
+
+1;

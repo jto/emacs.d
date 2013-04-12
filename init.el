@@ -83,6 +83,7 @@ Do nothing if $PATH already contains DIRNAME.
 
 (require 'autopair)
 (require 'yasnippet)
+(yas/global-mode 1)
 
 ;; ===============================================
 
