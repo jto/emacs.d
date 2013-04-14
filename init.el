@@ -131,10 +131,10 @@ Do nothing if $PATH already contains DIRNAME.
 
 ;; Load auctex settings
 (when (featurep 'ns)
-  (setq TeX-PDF-mode t)
-  (setq TeX-view-program-list '(("Open" "open \"%o\"")))
-  (setq TeX-view-program-selection '((output-pdf "Open")))
-  )
+  (setq TeX-PDF-mode t
+        TeX-view-program-list '(("Open" "open \"%o\""))
+        TeX-view-program-selection '((output-pdf "Open"))
+        ))
 
 (global-set-key (kbd "RET") 'newline-and-indent)
 (global-set-key (kbd "C-j") 'reindent-then-newline-and-indent)
@@ -176,8 +176,8 @@ Do nothing if $PATH already contains DIRNAME.
 ;; ===============================================
 
 (defcustom fixssh-data-file 
-  (concat "~/usr/bin/fixssh_"
-          (getenv "HOSTNAME"))
+  (expand-file-name (concat "~/usr/bin/fixssh_"
+                            (getenv "HOSTNAME")))
   "The name of the file that contains environment info from grabssh."
   :type '(string))
 
@@ -311,7 +311,7 @@ Don't mess with special buffers."
 
 ;; Separate custom file.
 (when (not (featurep 'aquamacs))
-  (setq custom-file "~/.emacs.d/emacs-custom.el")
+  (setq custom-file (expand-file-name "~/.emacs.d/emacs-custom.el"))
   (load custom-file 'noerror))
 
 ;; Time Emacs startup complete.
