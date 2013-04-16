@@ -1,0 +1,13 @@
+# -*- mode: snippet -*-
+# name: new-package
+# key: package
+# --
+package $1;
+
+use Modern::Perl;
+
+use base $2;
+
+$0
+
+1;
