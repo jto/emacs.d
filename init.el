@@ -326,6 +326,9 @@ Don't mess with special buffers."
 
 ;; ===============================================
 
+;; eshell customizations
+(load (expand-file-name "~/.emacs.d/eshell-custom.el") 'noerror)
+
 ;; Separate custom file.
 (when (not (featurep 'aquamacs))
   (setq custom-file (expand-file-name "~/.emacs.d/emacs-custom.el"))
