@@ -8,3 +8,5 @@ auto-save-list/
 backups/
 plugins/
 tramp
+eshell/
+customize-melpa.el
