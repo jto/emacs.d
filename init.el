@@ -48,6 +48,7 @@ Do nothing if $PATH already contains DIRNAME.
 (add-to-list '*my-packages* 'exec-path-from-shell)
 (add-to-list '*my-packages* 'auctex)
 (add-to-list '*my-packages* 'yasnippet)
+(add-to-list '*my-packages* 'color-theme-solarized)
 (dolist (p *my-packages*)
   (when (not (package-installed-p p))
     (condition-case-unless-debug err
@@ -355,6 +356,10 @@ Don't mess with special buffers."
   (goto-address-mode)
   (define-key term-raw-map "\C-y" 'my-term-paste))
 (add-hook 'term-mode-hook 'my-term-hook)
+
+;; ===============================================
+
+(load-theme 'solarized-light t)
 
 ;; ===============================================
 
