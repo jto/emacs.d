@@ -48,6 +48,10 @@ Do nothing if $PATH already contains DIRNAME.
 (add-to-list '*my-packages* 'exec-path-from-shell)
 (add-to-list '*my-packages* 'auctex)
 (add-to-list '*my-packages* 'yasnippet)
+(add-to-list '*my-packages* 's)
+(add-to-list '*my-packages* 'ht)
+(add-to-list '*my-packages* 'dash)
+(add-to-list '*my-packages* 'color-theme-solarized)
 (dolist (p *my-packages*)
   (when (not (package-installed-p p))
     (condition-case-unless-debug err
