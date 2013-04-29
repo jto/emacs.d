@@ -51,7 +51,6 @@ Do nothing if $PATH already contains DIRNAME.
 (add-to-list '*my-packages* 's)
 (add-to-list '*my-packages* 'ht)
 (add-to-list '*my-packages* 'dash)
->>>>>>> master
 (add-to-list '*my-packages* 'color-theme-solarized)
 (dolist (p *my-packages*)
   (when (not (package-installed-p p))
