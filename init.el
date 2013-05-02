@@ -369,6 +369,19 @@ Don't mess with special buffers."
 
 ;; ===============================================
 
+(defun my-swap-buffers ()
+  "Put the buffer from the selected window in next window, and vice versa"
+  (interactive)
+  (let* ((this (selected-window))
+     (other (next-window))
+     (this-buffer (window-buffer this))
+     (other-buffer (window-buffer other)))
+    (set-window-buffer other this-buffer)
+    (set-window-buffer this other-buffer)
+    ))
+
+;; ===============================================
+
 ;; Separate custom file.
 (when (not (featurep 'aquamacs))
   (setq custom-file (expand-file-name "~/.emacs.d/emacs-custom.el"))
