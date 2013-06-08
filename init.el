@@ -367,6 +367,10 @@ Don't mess with special buffers."
 
 ;; ===============================================
 
+(add-hook 'python-mode-hook 'autopair-mode)
+
+;; ===============================================
+
 (load-theme 'solarized-light t)
 
 ;; ===============================================
