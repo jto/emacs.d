@@ -103,6 +103,8 @@ Do nothing if $PATH already contains DIRNAME.
 (add-to-list 'interpreter-mode-alist '("perl5" . cperl-mode))
 (add-to-list 'interpreter-mode-alist '("miniperl" . cperl-mode))
 (add-to-list 'auto-mode-alist '("\\.gv\\'" . graphviz-dot-mode))
+(add-to-list 'auto-mode-alist '("\\.mysql\\'" . sql-mode))
+(add-to-list 'auto-mode-alist '("\\.psgi\\'" . cperl-mode))
 
 ;; Add paredit-mode to IELM
 (add-hook 'ielm-mode-hook 'paredit-mode)
