@@ -52,6 +52,8 @@ Do nothing if $PATH already contains DIRNAME.
 (add-to-list '*my-packages* 'ht)
 (add-to-list '*my-packages* 'dash)
 (add-to-list '*my-packages* 'color-theme-solarized)
+(add-to-list '*my-packages* 'virtualenv)
+(add-to-list '*my-packages* 'scala-mode2)
 (dolist (p *my-packages*)
   (when (not (package-installed-p p))
     (condition-case-unless-debug err
@@ -88,6 +90,11 @@ Do nothing if $PATH already contains DIRNAME.
                  (file-directory-p d))
         (add-to-list 'load-path d)))))
 
+(setq my-ensime-base-dir "~/.emacs.d/plugins/ensime_2.10.0-RC3-0.9.8.2")
+(setq my-ensime-elisp-path (concat my-ensime-base-dir "/elisp"))
+(when (not (memq my-ensime-elisp-path load-path))
+  (add-to-list 'load-path my-ensime-elisp-path))
+
 ;; ===============================================
 
 (when (memq window-system '(mac ns))
@@ -105,9 +112,14 @@ Do nothing if $PATH already contains DIRNAME.
 (add-to-list 'auto-mode-alist '("\\.gv\\'" . graphviz-dot-mode))
 (add-to-list 'auto-mode-alist '("\\.mysql\\'" . sql-mode))
 (add-to-list 'auto-mode-alist '("\\.psgi\\'" . cperl-mode))
+(add-to-list 'auto-mode-alist '("\\.sbt\\'" . scala-mode))
 
 ;; Add paredit-mode to IELM
 (add-hook 'ielm-mode-hook 'paredit-mode)
+
+;; Add ensime to scala
+(require 'ensime)
+(add-hook 'scala-mode-hook 'ensime-scala-mode-hook)
 
 ;; ===============================================
 
@@ -368,6 +380,11 @@ Don't mess with special buffers."
 ;; ===============================================
 
 (add-hook 'python-mode-hook 'autopair-mode)
+(add-hook 'python-mode-hook '(lambda () (require 'virtualenv)))
+;; (defun workon-postactivate (virtualenv)
+;;   (require 'virtualenv)
+;;   (virtualenv-workon virtualenv)
+;;   (desktop-change-dir virtualenv))
 
 ;; ===============================================
 
@@ -401,3 +418,7 @@ Don't mess with special buffers."
              (- (+ hi lo)
                 (+ (first *emacs-load-start*)
                    (second *emacs-load-start*))))))
+
+;; ===============================================
+
+(server-start)
