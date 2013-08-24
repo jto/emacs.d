@@ -20,6 +20,8 @@ Do nothing if $PATH already contains DIRNAME.
               (mapconcat 'identity (cons dirname path) ":")))))
 (my-add-to-path "/usr/local/bin")
 
+(push "/usr/local/bin" exec-path)
+
 ;; ===============================================
 
 ;; Initialize with packages. Most importantly, emacs-starter-kit for
