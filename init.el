@@ -6,6 +6,12 @@
 
 ;; ===============================================
 
+(let ((before-file (expand-file-name "~/.emacs.d/before-init.el")))
+  (when (file-exists-p before-file)
+    (load-file before-file)))
+
+;; ===============================================
+
 ;; Add /usr/local/bin to env path
 (defun my-add-to-path (dirname)
   "Prepend DIRNAME to $PATH.
@@ -92,11 +98,6 @@ Do nothing if $PATH already contains DIRNAME.
                  (file-directory-p d))
         (add-to-list 'load-path d)))))
 
-(setq my-ensime-base-dir "~/.emacs.d/plugins/ensime_2.10.0-RC3-0.9.8.2")
-(setq my-ensime-elisp-path (concat my-ensime-base-dir "/elisp"))
-(when (not (memq my-ensime-elisp-path load-path))
-  (add-to-list 'load-path my-ensime-elisp-path))
-
 ;; ===============================================
 
 (when (memq window-system '(mac ns))
@@ -120,8 +121,15 @@ Do nothing if $PATH already contains DIRNAME.
 (add-hook 'ielm-mode-hook 'paredit-mode)
 
 ;; Add ensime to scala
-(require 'ensime)
-(add-hook 'scala-mode-hook 'ensime-scala-mode-hook)
+(defvar my-ensime-base-dir "~/.emacs.d/plugins/ensime"
+  "Base directory for ensime, set in before-init.el")
+(defvar my-ensime-elisp-path (concat my-ensime-base-dir "/elisp")
+  "Elisp directory for ensime, automagic, leave alone")
+(when (file-directory-p my-ensime-elisp-path)
+  (when (not (memq my-ensime-elisp-path load-path))
+    (add-to-list 'load-path my-ensime-elisp-path))
+  (require 'ensime)
+  (add-hook 'scala-mode-hook 'ensime-scala-mode-hook))
 
 ;; ===============================================
 
@@ -412,6 +420,14 @@ Don't mess with special buffers."
   (setq custom-file (expand-file-name "~/.emacs.d/emacs-custom.el"))
   (load custom-file 'noerror))
 
+(let ((after-file (expand-file-name "~/.emacs.d/after-init.el")))
+  (when (file-exists-p after-file)
+    (load-file after-file)))
+
+(server-start)
+
+;; ===============================================
+
 ;; Time Emacs startup complete.
 (message "Emacs startup in %ds"
          (let ((time (current-time)))
@@ -420,7 +436,3 @@ Don't mess with special buffers."
              (- (+ hi lo)
                 (+ (first *emacs-load-start*)
                    (second *emacs-load-start*))))))
-
-;; ===============================================
-
-(server-start)
