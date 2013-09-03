@@ -400,6 +400,17 @@ Don't mess with special buffers."
 
 ;; ===============================================
 
+(defun narrow-to-region-indirect (start end)
+  "Restrict editing in this buffer to the current region, indirectly."
+  (interactive "r")
+  (deactivate-mark)
+  (let ((buf (clone-indirect-buffer nil nil)))
+    (with-current-buffer buf
+      (narrow-to-region start end))
+    (switch-to-buffer buf)))
+
+;; ===============================================
+
 (load-theme 'solarized-light t)
 
 ;; ===============================================
@@ -438,3 +449,4 @@ Don't mess with special buffers."
              (- (+ hi lo)
                 (+ (first *emacs-load-start*)
                    (second *emacs-load-start*))))))
+(put 'narrow-to-region 'disabled nil)
