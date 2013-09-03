@@ -59,6 +59,7 @@ Do nothing if $PATH already contains DIRNAME.
 (add-to-list '*my-packages* 's)
 (add-to-list '*my-packages* 'ht)
 (add-to-list '*my-packages* 'dash)
+(add-to-list '*my-packages* 'yaml-mode)
 (add-to-list '*my-packages* 'color-theme-solarized)
 (add-to-list '*my-packages* 'virtualenv)
 (add-to-list '*my-packages* 'scala-mode2)
@@ -116,6 +117,7 @@ Do nothing if $PATH already contains DIRNAME.
 (add-to-list 'auto-mode-alist '("\\.mysql\\'" . sql-mode))
 (add-to-list 'auto-mode-alist '("\\.psgi\\'" . cperl-mode))
 (add-to-list 'auto-mode-alist '("\\.sbt\\'" . scala-mode))
+(add-to-list 'auto-mode-alist '("\\.cfg\\'" . yaml-mode))
 
 ;; Add paredit-mode to IELM
 (add-hook 'ielm-mode-hook 'paredit-mode)
