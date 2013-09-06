@@ -133,6 +133,8 @@ Do nothing if $PATH already contains DIRNAME.
   (require 'ensime)
   (add-hook 'scala-mode-hook 'ensime-scala-mode-hook))
 
+(add-hook 'js-mode-hook 'autopair-mode)
+
 ;; ===============================================
 
 ;; From
