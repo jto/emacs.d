@@ -11,3 +11,4 @@ tramp
 eshell/
 customize-melpa.el
 *~
+*.desktop
