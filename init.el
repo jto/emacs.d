@@ -63,6 +63,7 @@ Do nothing if $PATH already contains DIRNAME.
 (add-to-list '*my-packages* 'color-theme-solarized)
 (add-to-list '*my-packages* 'virtualenv)
 (add-to-list '*my-packages* 'scala-mode2)
+(add-to-list '*my-packages* 'haskell-mode)
 (dolist (p *my-packages*)
   (when (not (package-installed-p p))
     (condition-case-unless-debug err
@@ -440,6 +441,10 @@ Don't mess with special buffers."
     (load-file after-file)))
 
 (server-start)
+
+;; ===============================================
+
+(add-hook 'haskell-mode-hook 'turn-on-haskell-indentation)
 
 ;; ===============================================
 
