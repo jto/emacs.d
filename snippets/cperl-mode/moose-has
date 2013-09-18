@@ -1,0 +1,16 @@
+# -*- mode: snippet -*-
+# name: moose-has
+# key: moosehas
+# expand-env: ((yas/indent-line 'fixed) (yas/wrap-around-region 'nil))
+# contributor: Mike Prentice <michael.prentice@tufts.edu>
+# --
+has $1 => (
+    is => 'ro',
+    isa => '${2:Str}',
+    lazy => 1,
+    builder => '${3:_build_$1}',
+);
+
+sub $3 {
+    return $0;
+};
