@@ -10,3 +10,4 @@ plugins/
 tramp
 eshell/
 customize-melpa.el
+*~
