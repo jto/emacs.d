@@ -1,37 +1,95 @@
 (require 'cl)
 
+;; ========
+;; = INIT =
+;; ========
+
 ;; Time Emacs startup.
 ;; From http://a-nickels-worth.blogspot.com/2007/11/effective-emacs.html
-(defvar *emacs-load-start* (current-time))
+(defvar mike-emacs-load-start-time (current-time))
 
-;; ===============================================
+(defvar mike-emacs-dir
+  (expand-file-name (file-name-as-directory "~/.emacs.d"))
+  "The directory to use for emacs configs, typically $HOME/.emacs.d/")
 
-(let ((before-file (expand-file-name "~/.emacs.d/before-init.el")))
+(defun mike-catfile (&rest comps)
+  "Safely concatenate path COMPS to produce a directory or filename"
+  (if (null comps)
+      (file-name-as-directory ".")
+    (let ((result (car comps)))
+      (dolist (filename (cdr comps))
+        (setq result (concat (file-name-as-directory result) filename)))
+      (let ((dir (file-name-as-directory result)))
+        (if (file-directory-p dir)
+            dir
+          result)))))
+
+;; Use before-init.el to set variables to override defaults
+(let ((before-file (expand-file-name (mike-catfile mike-emacs-dir
+                                                   "before-init.el"))))
   (when (file-exists-p before-file)
     (load-file before-file)))
 
-;; ===============================================
+;; ========
+;; = PATH =
+;; ========
 
-;; Add /usr/local/bin to env path
-(defun my-add-to-path (dirname)
+(defvar mike-path-paths
+  '("/usr/local/bin")
+  "Paths to safely add to $PATH environment variable
+
+Useful for graphical emacs that may not pick up $PATH from user's bashrc")
+
+(defvar mike-exec-paths
+  (map 'list 'expand-file-name mike-path-paths)
+  "Paths to add to emacs `exec-path'. Defaults to `mike-path-paths'.")
+
+(defvar mike-plugins-dir (mike-catfile mike-emacs-dir "plugins")
+  "Plugins directory. Defaults to `mike-emacs-dir'/plugins")
+
+(defun mike-add-to-path (dirname)
   "Prepend DIRNAME to $PATH.
 
-Do nothing if $PATH already contains DIRNAME.
-
-(fn DIRNAME)"
+Do nothing if $PATH already contains DIRNAME."
   (let ((path (split-string (getenv "PATH") ":")))
     (if (member dirname path)
         (getenv "PATH")
       (setenv "PATH"
               (mapconcat 'identity (cons dirname path) ":")))))
-(my-add-to-path "/usr/local/bin")
 
-(push "/usr/local/bin" exec-path)
+(defun mike-update-paths ()
+  "Update $PATH and `exec-path'
 
-;; ===============================================
+Update $PATH environment variable with `mike-path-paths'.
+Update `exec-path' with `mike-exec-paths'.
+Update `load-path' with `mike-plugins-dir'."
+  (interactive p)
+  ;; $PATH
+  (dolist (path mike-path-paths) (mike-add-to-path path))
+  ;; exec-path
+  (dolist (path mike-exec-paths)
+    (when (not (member path exec-path))
+      (push path exec-path)))
+  ;; plugins
+  (when (file-directory-p mike-plugins-dir)
+    (when (not (memq mike-plugins-dir load-path))
+      (add-to-list 'load-path mike-plugins-dir))
+    (dolist (d (directory-files mike-plugins-dir t))
+      (when (and (not (string/ends-with d "."))
+                 (not (string/ends-with d ".."))
+                 (not (memq d load-path))
+                 (file-directory-p d))
+        (add-to-list 'load-path d)))))
+
+(mike-update-paths)
+
+;; ============
+;; = PACKAGES =
+;; ============
 
 ;; Initialize with packages. Most importantly, emacs-starter-kit for
 ;; sane defaults.
+
 (require 'package)
 (add-to-list 'package-archives
 	     '("marmalade" . "http://marmalade-repo.org/packages/") t)
@@ -42,41 +100,50 @@ Do nothing if $PATH already contains DIRNAME.
 ;; Create a list of packages to install if not present.
 (when (not package-archive-contents)
   (package-refresh-contents))
-(defvar *my-packages* '()
+(defvar mike-packages '()
   "A list of packages to ensure are installed at launch.")
-(add-to-list '*my-packages* 'starter-kit)
-(add-to-list '*my-packages* 'starter-kit-lisp)
-(add-to-list '*my-packages* 'starter-kit-bindings)
-(add-to-list '*my-packages* 'starter-kit-eshell)
-(add-to-list '*my-packages* 'magit)
-(add-to-list '*my-packages* 'geiser)
-(add-to-list '*my-packages* 'graphviz-dot-mode)
-(add-to-list '*my-packages* 'autopair)
-(add-to-list '*my-packages* 'melpa)
-(add-to-list '*my-packages* 'exec-path-from-shell)
-(add-to-list '*my-packages* 'auctex)
-(add-to-list '*my-packages* 'yasnippet)
-(add-to-list '*my-packages* 's)
-(add-to-list '*my-packages* 'ht)
-(add-to-list '*my-packages* 'dash)
-(add-to-list '*my-packages* 'yaml-mode)
-(add-to-list '*my-packages* 'color-theme-solarized)
-(add-to-list '*my-packages* 'virtualenv)
-(add-to-list '*my-packages* 'scala-mode2)
-(add-to-list '*my-packages* 'haskell-mode)
-(defun my-install-packages ()
+
+  '(starter-kit
+    starter-kit-lisp
+    starter-kit-bindings
+    starter-kit-eshell
+    magit
+    geiser
+    graphviz-dot-mode
+    autopair
+    melpa
+    exec-path-from-shell
+    auctex
+    yasnippet
+    s
+    ht
+    dash
+    yaml-mode
+    color-theme-solarized
+    virtualenv
+    scala-mode2
+    haskell-mode)
+
+
+(defun mike-install-packages ()
+  "Install uninstalled packages in `mike-packages'"
   (interactive p)
-  (dolist (p *my-packages*)
+  (dolist (p mike-packages)
     (when (not (package-installed-p p))
       (condition-case-unless-debug err
           (package-install p)
         (error (message "%s" (error-message-string err)))))))
 
+;; ============
+;; = REQUIRES =
+;; ============
+
 (require 'autopair)
 (require 'yasnippet)
-(yas-global-mode 1)
 
 ;; ===============================================
+
+(yas-global-mode 1)
 
 ;; Utils from
 ;; http://emacswiki.org/emacs/ElispCookbook
@@ -89,18 +156,6 @@ Do nothing if $PATH already contains DIRNAME.
   (cond ((>= (length s) (length arg))
          (string-equal (substring s 0 (length arg)) arg))
                     (t nil)))
-
-;; Add plugins to load path
-(let ((plugin-dir (expand-file-name "~/.emacs.d/plugins")))
-  (when (file-directory-p plugin-dir)
-    (when (not (memq plugin-dir load-path))
-      (add-to-list 'load-path plugin-dir))
-    (dolist (d (directory-files plugin-dir t))
-      (when (and (not (string/ends-with d "."))
-                 (not (string/ends-with d ".."))
-                 (not (memq d load-path))
-                 (file-directory-p d))
-        (add-to-list 'load-path d)))))
 
 ;; ===============================================
 
@@ -126,13 +181,13 @@ Do nothing if $PATH already contains DIRNAME.
 (add-hook 'ielm-mode-hook 'paredit-mode)
 
 ;; Add ensime to scala
-(defvar my-ensime-base-dir "~/.emacs.d/plugins/ensime"
+(defvar mike-ensime-base-dir "~/.emacs.d/plugins/ensime"
   "Base directory for ensime, set in before-init.el")
-(defvar my-ensime-elisp-path (concat my-ensime-base-dir "/elisp")
+(defvar mike-ensime-elisp-path (concat mike-ensime-base-dir "/elisp")
   "Elisp directory for ensime, automagic, leave alone")
-(when (file-directory-p my-ensime-elisp-path)
-  (when (not (memq my-ensime-elisp-path load-path))
-    (add-to-list 'load-path my-ensime-elisp-path))
+(when (file-directory-p mike-ensime-elisp-path)
+  (when (not (memq mike-ensime-elisp-path load-path))
+    (add-to-list 'load-path mike-ensime-elisp-path))
   (require 'ensime)
   (add-hook 'scala-mode-hook 'ensime-scala-mode-hook))
 
@@ -175,7 +230,7 @@ Do nothing if $PATH already contains DIRNAME.
 ;; ===============================================
 
 ;; CPerl customizations
-(defun my-cperl-mode-hook ()
+(defun mike-cperl-mode-hook ()
   (setq cperl-indent-level                4
         cperl-close-paren-offset         -4
         cperl-continued-statement-offset  4
@@ -184,7 +239,7 @@ Do nothing if $PATH already contains DIRNAME.
         cperl-merge-trailing-else         nil)
   (auto-fill-mode 0)
   (autopair-mode 1))
-(add-hook 'cperl-mode-hook 'my-cperl-mode-hook)
+(add-hook 'cperl-mode-hook 'mike-cperl-mode-hook)
 
 ;; ===============================================
 
@@ -367,7 +422,7 @@ Don't mess with special buffers."
 ;; ansi-term improvements
 ;; http://emacs-journey.blogspot.com/2012/06/improving-ansi-term.html
 
-(defadvice term-sentinel (around my-advice-term-sentinel (proc msg))
+(defadvice term-sentinel (around mike-advice-term-sentinel (proc msg))
   (if (memq (process-status proc) '(signal exit))
       (let ((buffer (process-buffer proc)))
         ad-do-it
@@ -375,24 +430,24 @@ Don't mess with special buffers."
     ad-do-it))
 ;; (ad-activate 'term-sentinel)
 
-(defvar my-term-shell "/bin/bash")
+(defvar mike-term-shell "/bin/bash")
 (defadvice ansi-term (before force-bash)
-  (interactive (list my-term-shell)))
+  (interactive (list mike-term-shell)))
 (ad-activate 'ansi-term)
 
-(defun my-term-use-utf8 ()
+(defun mike-term-use-utf8 ()
   (set-buffer-process-coding-system 'utf-8-unix 'utf-8-unix))
-(add-hook 'term-exec-hook 'my-term-use-utf8)
+(add-hook 'term-exec-hook 'mike-term-use-utf8)
 
-(defun my-term-paste (&optional string)
+(defun mike-term-paste (&optional string)
  (interactive)
  (process-send-string
   (get-buffer-process (current-buffer))
   (if string string (current-kill 0))))
-(defun my-term-hook ()
+(defun mike-term-hook ()
   (goto-address-mode)
-  (define-key term-raw-map "\C-y" 'my-term-paste))
-(add-hook 'term-mode-hook 'my-term-hook)
+  (define-key term-raw-map "\C-y" 'mike-term-paste))
+(add-hook 'term-mode-hook 'mike-term-hook)
 
 ;; ===============================================
 
@@ -420,7 +475,7 @@ Don't mess with special buffers."
 
 ;; ===============================================
 
-(defun my-swap-buffers ()
+(defun mike-swap-buffers ()
   "Put the buffer from the selected window in next window, and vice versa"
   (interactive)
   (let* ((this (selected-window))
@@ -433,20 +488,22 @@ Don't mess with special buffers."
 
 ;; ===============================================
 
+(add-hook 'haskell-mode-hook 'turn-on-haskell-indentation)
+
+;; ===============================================
+
 ;; Separate custom file.
 (when (not (featurep 'aquamacs))
   (setq custom-file (expand-file-name "~/.emacs.d/emacs-custom.el"))
   (load custom-file 'noerror))
 
-(let ((after-file (expand-file-name "~/.emacs.d/after-init.el")))
-  (when (file-exists-p after-file)
-    (load-file after-file)))
+(defun mike-load-after-init ()
+  (let ((after-file (expand-file-name "~/.emacs.d/after-init.el")))
+    (when (file-exists-p after-file)
+      (load-file after-file))))
+(mike-load-after-init)
 
 (server-start)
-
-;; ===============================================
-
-(add-hook 'haskell-mode-hook 'turn-on-haskell-indentation)
 
 ;; ===============================================
 
@@ -456,6 +513,6 @@ Don't mess with special buffers."
            (let ((hi (first time))
                  (lo (second time)))
              (- (+ hi lo)
-                (+ (first *emacs-load-start*)
-                   (second *emacs-load-start*))))))
+                (+ (first mike-emacs-load-start-time)
+                   (second mike-emacs-load-start-time))))))
 (put 'narrow-to-region 'disabled nil)
