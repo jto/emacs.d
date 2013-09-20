@@ -12,3 +12,7 @@ eshell/
 customize-melpa.el
 *~
 *.desktop
+
+*.lock
+
+snippets/cperl-mode/.yas-compiled-snippets.el
