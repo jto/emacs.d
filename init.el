@@ -64,15 +64,17 @@ Do nothing if $PATH already contains DIRNAME.
 (add-to-list '*my-packages* 'virtualenv)
 (add-to-list '*my-packages* 'scala-mode2)
 (add-to-list '*my-packages* 'haskell-mode)
-(dolist (p *my-packages*)
-  (when (not (package-installed-p p))
-    (condition-case-unless-debug err
-        (package-install p)
-      (error (message "%s" (error-message-string err))))))
+(defun my-install-packages ()
+  (interactive p)
+  (dolist (p *my-packages*)
+    (when (not (package-installed-p p))
+      (condition-case-unless-debug err
+          (package-install p)
+        (error (message "%s" (error-message-string err)))))))
 
 (require 'autopair)
 (require 'yasnippet)
-(yas/global-mode 1)
+(yas-global-mode 1)
 
 ;; ===============================================
 
