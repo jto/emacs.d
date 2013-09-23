@@ -247,10 +247,6 @@ From URL `http://www.mygooglest.com/fni/dot-emacs.html'."
 (when (try-require 'recentf)
   (recentf-mode))
 
-;; Autopair everywhere except lisp, where we use paredit
-(when (try-require 'autopair)
-  (autopair-global-mode))
-
 ;; I like the menu bar, disabled in starter-kit
 (when window-system
   (menu-bar-mode))
