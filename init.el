@@ -429,7 +429,8 @@ From URL `http://www.mygooglest.com/fni/dot-emacs.html'."
 (defun mike-term-mode-hook ()
   (goto-address-mode)
   (define-key term-raw-map "\C-y" 'mike-term-paste)
-  (autopair-mode 0))
+  (autopair-mode 0)
+  (setq show-trailing-whitespace nil))
 (add-hook 'term-mode-hook 'mike-term-mode-hook)
 
 ;; ** MULTI-TERM
