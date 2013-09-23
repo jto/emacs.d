@@ -219,7 +219,8 @@ From URL `http://www.mygooglest.com/fni/dot-emacs.html'."
         (if (stringp feature)
             (load-library feature)
           (require feature))
-        (message "Checking for library `%s'... Found" feature))
+        (message "Checking for library `%s'... Found" feature)
+        feature)
     ;; error handler
     (file-error  ; condition
      (progn
