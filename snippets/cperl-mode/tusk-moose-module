@@ -30,7 +30,7 @@ package ${1:`(mapconcat 'identity
 use 5.008;
 use strict;
 use warnings;
-use version;
+use version; our $VERSION = qv('${2:0.0.1}');
 use utf8;
 use Carp;
 use Readonly;
@@ -39,8 +39,6 @@ use Readonly;
 # use TUSK::Types qw( UnsignedInt UnsignedNum StrHashRef StrArrayRef );
 
 use Moose;
-
-our $VERSION = qv('${2:0.0.1}');
 
 ####################
 # Class attributes #
