@@ -1,109 +1,321 @@
-;;; init.el --- Mikemacs: Opinionated defaults for Mike's Emacs happiness.
+;; * init.el --- Mikemacs: Opinionated defaults for Mike's Emacs happiness.
 
-;;; ========================
-;;; = VARIABLE DEFINITIONS =
-;;; ========================
+;; * STARTUP
 
 (defvar mike-emacs-load-start-time (current-time)
   "The time at which Emacs was started.
 
 See URL `http://a-nickels-worth.blogspot.com/2007/11/effective-emacs.html'.")
 
+(require 'cl)
+
 (defvar mike-emacs-dir
   (expand-file-name "~/.emacs.d")
   "The directory to use for Emacs configs.  Default is $HOME/.emacs.d/.")
 
-(defvar mike-server-start t
-  "Start server after initialization.  Default is true.")
 
-;;; ======================
-;;; = VARIABLE OVERRIDES =
-;;; ======================
+;; * VARIABLE OVERRIDES
 
 ;; Use before-init.el to set variables to override defaults.
 (let ((before-file (expand-file-name "before-init.el" mike-emacs-dir)))
   (when (file-exists-p before-file)
     (load-file before-file)))
 
-;;; ============
-;;; = REQUIRES =
-;;; ============
 
-(require 'cl)
+;; * UTILS
 
-;;; ========
-;;; = PATH =
-;;; ========
+;; ** STRING UTILS
 
-(pushnew mike-emacs-dir load-path)
+;; Utils from
+;; http://emacswiki.org/emacs/ElispCookbook
+(defun mike-string-ends-with (str suffix)
+  "Return t if STR ends with SUFFIX."
+  (let ((elength (length suffix)))
+    (string-equal suffix (substring str (- 0 elength)))))
 
-(require 'mike-paths)
+(defun mike-string-starts-with (str prefix)
+  "Return t if STR begins with PREFIX."
+  (cond ((>= (length str) (length prefix))
+         (string-equal prefix (substring str 0 (length prefix))))
+        (t nil)))
+
+;; ** BUFFER UTILS
+
+(defun narrow-to-region-indirect (start end)
+  "Restrict editing in this buffer to the current region, indirectly."
+  (interactive "r")
+  (deactivate-mark)
+  (let ((buf (clone-indirect-buffer nil nil)))
+    (with-current-buffer buf
+      (narrow-to-region start end))
+    (switch-to-buffer buf)))
+
+(defun mike-swap-buffers ()
+  "Put the buffer from the selected window in next window, and vice versa."
+  (interactive)
+  (let* ((this (selected-window))
+         (other (next-window))
+         (this-buffer (window-buffer this))
+         (other-buffer (window-buffer other)))
+    (set-window-buffer other this-buffer)
+    (set-window-buffer this other-buffer)
+    ))
+
+
+;; * PATH
+
+(add-to-list 'load-path mike-emacs-dir)
+
+;; ** VARIABLE DEFINITIONS
+
+(defvar mike-path-paths
+  '("/usr/local/bin")
+  "Paths to safely add to $PATH environment variable.
+
+Useful for graphical Emacs that may not pick up $PATH from user's bashrc.")
+
+(defvar mike-exec-paths
+  (map 'list 'expand-file-name mike-path-paths)
+  "Paths to add to Emacs `exec-path'. Defaults to `mike-path-paths'.")
+
+(defvar mike-plugins-dir
+  (file-name-as-directory (expand-file-name "plugins" mike-emacs-dir))
+  "Plugins directory. Defaults to `mike-emacs-dir'/plugins/.")
+
+;; ** FUNCTIONS
+
+(defun mike-add-to-path (dirname)
+  "Prepend DIRNAME to $PATH.
+
+Do nothing if $PATH already contains DIRNAME."
+  (let ((path (split-string (getenv "PATH") ":")))
+    (if (member dirname path)
+        (getenv "PATH")
+      (setenv "PATH"
+              (mapconcat 'identity (cons dirname path) ":")))))
+
+(defun mike-update-plugins ()
+  "Update `load-path' with plugins from `mike-plugins-dir'."
+  (interactive)
+  (add-to-list 'load-path mike-plugins-dir)
+  (dolist (dirname (directory-files mike-plugins-dir t))
+    (when (and (not (mike-string-ends-with dirname "."))
+               (not (mike-string-ends-with dirname ".."))
+               (file-directory-p dirname))
+      (add-to-list 'load-path dirname))))
+
+(defun mike-update-paths ()
+  "Update $PATH and `exec-path'.
+
+Update $PATH environment variable with `mike-path-paths'.
+Update `exec-path' with `mike-exec-paths'.
+Update `load-path' with `mike-plugins-dir'."
+  (interactive)
+  ;; $PATH
+  (dolist (path mike-path-paths) (mike-add-to-path path))
+  ;; exec-path
+  (dolist (path mike-exec-paths)
+    (add-to-list 'exec-path path))
+  ;; plugins
+  (mike-update-plugins))
+
 (mike-update-paths)
 
-;;; ============
-;;; = PACKAGES =
-;;; ============
 
-(require 'mike-packages)
-(mike-install-packages)
+;; * PACKAGES
 
-;;; ============
-;;; = MIKEMACS =
-;;; ============
+;; Initialize with packages. Most importantly, emacs-starter-kit for
+;; sane defaults.
 
-(defvar mike-exclude-mike-modules '()
+(require 'package)
+
+;; ** SETUP
+
+;; Add package repositories.
+(add-to-list 'package-archives
+	     '("marmalade" . "http://marmalade-repo.org/packages/") t)
+(add-to-list 'package-archives
+             '("melpa" . "http://melpa.milkbox.net/packages/") t)
+
+;; Initialize package.
+(package-initialize)
+
+;; Create a list of packages to install if not present.
+(when (not package-archive-contents)
+  (package-refresh-contents))
+
+;; ** VARIABLE DEFINITIONS
+
+(defvar mike-package-packages '()
+  "A list of packages to ensure are installed in Emacs.")
+(dolist (p '(starter-kit
+             starter-kit-lisp
+             starter-kit-bindings
+             starter-kit-eshell
+             magit
+             geiser
+             graphviz-dot-mode
+             autopair
+             melpa
+             exec-path-from-shell
+             auctex
+             yasnippet
+             s
+             ht
+             dash
+             yaml-mode
+             color-theme-solarized
+             virtualenv
+             scala-mode2
+             haskell-mode))
+  (pushnew p mike-package-packages))
+
+(defvar mike-exclude-packages '()
   "Packages to exclude from this Emacs instance.
 
-Set this list in before-init.el to exclude unwanted mike-* packages.")
+Set this list in before-init.el to exclude unwanted packages.")
 
-(dolist (p '(mike-globals
-             mike-utils))
-  (unless (member p mike-exclude-mike-modules)
-    (require p)))
+(defvar mike-missing-packages-list '()
+  "A list of missing packages set by `try-require'.")
 
-(require 'autopair)
+;; ** FUNCTIONS
 
-;;; ===============================================
+(defun mike-package-to-install-p (pkg)
+  "True if P should be installed and is not."
+  (not (or (package-installed-p pkg)
+           (member pkg mike-exclude-packages))))
 
+(defun mike-check-packages ()
+  "Check for uninstalled packages."
+  (interactive)
+  (let ((uninstalled-packages (cl-remove-if-not 'mike-package-to-install-p
+                                                mike-package-packages)))
+    (message
+     (if (null uninstalled-packages)
+         "All packages installed."
+       "Uninstalled packages. Run `mike-install-packages' to install."))))
 
-;;; ===============================================
+(defun mike-install-packages ()
+  "Install uninstalled packages in `mike-package-packages'."
+  (interactive)
+  (dolist (pkg mike-package-packages)
+    (when (mike-package-to-install-p pkg)
+      (condition-case-unless-debug err
+          (package-install pkg)
+        (error (message "%s" (error-message-string err)))))))
 
-(when (memq window-system '(mac ns))
+(defun try-require (feature)
+  "Attempt to load a library or module named FEATURE.
+
+Return true if the library given as argument is successfully
+loaded. If not, instead of an error, just add the package to a
+list of missing packages.
+
+From URL `http://www.mygooglest.com/fni/dot-emacs.html'."
+  (condition-case err
+      ;; protected form
+      (progn
+        (message "Checking for library `%s'..." feature)
+        (if (stringp feature)
+            (load-library feature)
+          (require feature))
+        (message "Checking for library `%s'... Found" feature))
+    ;; error handler
+    (file-error  ; condition
+     (progn
+       (message "Checking for library `%s'... Missing" feature)
+       (add-to-list 'mike-missing-packages-list feature 'append))
+     nil)))
+
+(mike-install-packages)
+
+;; ** EXEC-PATH-FROM-SHELL
+
+;; Pick up $PATH from environment on GUI systems.
+(when (and (memq window-system '(mac ns))
+           (try-require 'exec-path-from-shell))
   (exec-path-from-shell-initialize))
 
-;;; ===============================================
 
-;; Autoloads
+;; * PERL
 
-;; Modes
-(add-to-list 'auto-mode-alist '("\\.\\([pP][Llm]\\)\\'" . cperl-mode))
-(add-to-list 'interpreter-mode-alist '("perl" . cperl-mode))
-(add-to-list 'interpreter-mode-alist '("perl5" . cperl-mode))
-(add-to-list 'interpreter-mode-alist '("miniperl" . cperl-mode))
-(add-to-list 'auto-mode-alist '("\\.gv\\'" . graphviz-dot-mode))
-(add-to-list 'auto-mode-alist '("\\.mysql\\'" . sql-mode))
-(add-to-list 'auto-mode-alist '("\\.psgi\\'" . cperl-mode))
+(when (and (try-require 'autopair)
+           (try-require 'cperl-mode))
+
+  ;; modes
+  (add-to-list 'interpreter-mode-alist '("perl" . cperl-mode))
+  (add-to-list 'interpreter-mode-alist '("perl5" . cperl-mode))
+  (add-to-list 'interpreter-mode-alist '("miniperl" . cperl-mode))
+
+  (add-to-list 'auto-mode-alist '("\\.\\([pP][Llm]\\)\\'" . cperl-mode))
+  (add-to-list 'auto-mode-alist '("\\.psgi\\'" . cperl-mode))
+
+  ;; CPerl customizations
+  (defun mike-cperl-mode-hook ()
+    (setq cperl-indent-level                4
+          cperl-close-paren-offset         -4
+          cperl-continued-statement-offset  4
+          cperl-indent-parens-as-block      t
+          cperl-tab-always-indent           t
+          cperl-merge-trailing-else         nil)
+    (auto-fill-mode 0)
+    (autopair-mode 1))
+  (add-hook 'cperl-mode-hook 'mike-cperl-mode-hook))
+
+
+;; * SCALA
+
 (add-to-list 'auto-mode-alist '("\\.sbt\\'" . scala-mode))
-(add-to-list 'auto-mode-alist '("\\.cfg\\'" . yaml-mode))
-
-;; Add paredit-mode to IELM
-(add-hook 'ielm-mode-hook 'paredit-mode)
 
 ;; Add ensime to scala
-(defvar mike-ensime-base-dir "~/.emacs.d/plugins/ensime"
-  "Base directory for ensime, set in before-init.el.")
-(defvar mike-ensime-elisp-path (concat mike-ensime-base-dir "/elisp")
-  "Elisp directory for ensime, automagic, leave alone.")
-(when (file-directory-p mike-ensime-elisp-path)
-  (when (not (memq mike-ensime-elisp-path load-path))
-    (add-to-list 'load-path mike-ensime-elisp-path))
-  (require 'ensime)
+(when (and (try-require 'scala-mode)
+           (try-require 'ensime))
   (add-hook 'scala-mode-hook 'ensime-scala-mode-hook))
 
-(add-hook 'js-mode-hook 'autopair-mode)
 
-;;; ===============================================
+;; * YAML
 
+(add-to-list 'auto-mode-alist '("\\.cfg\\'" . yaml-mode))
+
+
+;; * GRAPHVIZ DOT
+
+(try-require 'graphviz-dot-mode)
+
+(add-to-list 'auto-mode-alist '("\\.gv\\'" . graphviz-dot-mode))
+
+;; Graphviz customizations
+(setq graphviz-dot-auto-indent-on-braces nil)
+(setq graphviz-dot-auto-indent-on-semi nil)
+(setq graphviz-dot-indent-width 4)
+
+
+;; * SQL
+
+;; ** MySQL
+
+(add-to-list 'auto-mode-alist '("\\.mysql\\'" . sql-mode))
+
+
+;; * ELISP
+
+;; ** IELM
+(require 'ielm)
+
+;; Add paredit-mode to IELM
+(when (and (try-require 'ielm)
+           (try-require 'paredit))
+  (add-hook 'ielm-mode-hook 'paredit-mode))
+
+
+;; * JAVASCRIPT
+
+(when (and (try-require 'js)
+           (try-require 'autopair))
+  (add-hook 'js-mode-hook 'autopair-mode))
+
+
+;; * TERM
 ;; From
 ;; http://www.enigmacurry.com/2008/12/26/emacs-ansi-term-tricks/
 (require 'term)
@@ -136,28 +348,18 @@ Set this list in before-init.el to exclude unwanted mike-* packages.")
 (global-set-key (kbd "<f2>") 'visit-ansi-term)
 (global-set-key (kbd "C-c t") 'visit-ansi-term)
 
-;;; ===============================================
 
-;; CPerl customizations
-(defun mike-cperl-mode-hook ()
-  (setq cperl-indent-level                4
-        cperl-close-paren-offset         -4
-        cperl-continued-statement-offset  4
-        cperl-indent-parens-as-block      t
-        cperl-tab-always-indent           t
-        cperl-merge-trailing-else         nil)
-  (auto-fill-mode 0)
-  (autopair-mode 1))
-(add-hook 'cperl-mode-hook 'mike-cperl-mode-hook)
+;; * EMACS MENU
 
-;;; ===============================================
-
-;; I like the menu.
 (when window-system
   (menu-bar-mode))
 
+;; * FILE UTILS
+
 ;; Recent files
 (recentf-mode)
+
+;; * TEX
 
 ;; Load auctex settings
 (when (featurep 'ns)
@@ -170,7 +372,8 @@ Set this list in before-init.el to exclude unwanted mike-* packages.")
 
 (global-set-key (kbd "C-c g") 'magit-status)
 
-;;; ===============================================
+
+;; * SCHEME
 
 ;; Geiser customizations (Scheme Slime-like environment)
 ;; Disable read-only prompt in Geiser.
@@ -181,27 +384,8 @@ Set this list in before-init.el to exclude unwanted mike-* packages.")
   (progn
     (add-hook 'geiser-repl-mode-hook 'paredit-mode)))
 
-;;; ===============================================
 
-;; Graphviz customizations
-(setq graphviz-dot-auto-indent-on-braces nil)
-(setq graphviz-dot-auto-indent-on-semi nil)
-(setq graphviz-dot-indent-width 4)
-
-;;; ===============================================
-
-;; Org-mode and mobile-org customizations
-;; set org-mobile-encryption-password in custom
-(setq dropbox-dir (expand-file-name "~/Dropbox"))
-(setq org-directory (expand-file-name "org" dropbox-dir))
-(setq org-agenda-file (expand-file-name "agendafiles.txt" org-directory))
-(setq org-mobile-directory (expand-file-name "MobileOrg" dropbox-dir))
-(setq org-mobile-inbox-for-pull (expand-file-name "flagged.org" org-directory))
-
-;; Enable column number mode everywhere.
-(setq column-number-mode t)
-
-;;; ===============================================
+;; * SSH
 
 (defcustom fixssh-data-file
   (expand-file-name (concat "~/usr/bin/fixssh_"
@@ -227,7 +411,8 @@ Requires grabssh to put SSH variables in the file identified by
           (setenv key val)))
       (kill-buffer buffer))))
 
-;;; ===============================================
+
+;; * PRELUDE
 
 ;; Nifty functions from prelude package
 ;; See emacsredux.com/blog
@@ -299,8 +484,8 @@ Position the cursor at its beginning, according to the current mode."
    (concat
     "http://www.google.com/search?ie=utf-8&oe=utf-8&q="
     (url-hexify-string (if mark-active
-         (buffer-substring (region-beginning) (region-end))
-       (read-string "Google: "))))))
+                           (buffer-substring (region-beginning) (region-end))
+                         (read-string "Google: "))))))
 
 (defun prelude-kill-other-buffers ()
   "Kill all buffers but the current one.
@@ -322,7 +507,8 @@ Don't mess with special buffers."
           (message "Deleted file %s" filename)
           (kill-buffer))))))
 
-;;; ===============================================
+
+;; * ESHELL
 
 ;; eshell customizations
 (load (expand-file-name "~/.emacs.d/eshell-custom.el") 'noerror)
@@ -348,16 +534,17 @@ Don't mess with special buffers."
 (add-hook 'term-exec-hook 'mike-term-use-utf8)
 
 (defun mike-term-paste (&optional string)
- (interactive)
- (process-send-string
-  (get-buffer-process (current-buffer))
-  (if string string (current-kill 0))))
+  (interactive)
+  (process-send-string
+   (get-buffer-process (current-buffer))
+   (if string string (current-kill 0))))
 (defun mike-term-hook ()
   (goto-address-mode)
   (define-key term-raw-map "\C-y" 'mike-term-paste))
 (add-hook 'term-mode-hook 'mike-term-hook)
 
-;;; ===============================================
+
+;; * PYTHON
 
 (add-hook 'python-mode-hook 'autopair-mode)
 (add-hook 'python-mode-hook '(lambda () (require 'virtualenv)))
@@ -366,41 +553,53 @@ Don't mess with special buffers."
 ;;   (virtualenv-workon virtualenv)
 ;;   (desktop-change-dir virtualenv))
 
-;;; ===============================================
 
-(defun narrow-to-region-indirect (start end)
-  "Restrict editing in this buffer to the current region, indirectly."
-  (interactive "r")
-  (deactivate-mark)
-  (let ((buf (clone-indirect-buffer nil nil)))
-    (with-current-buffer buf
-      (narrow-to-region start end))
-    (switch-to-buffer buf)))
-
-;;; ===============================================
+;; * THEME
 
 (load-theme 'solarized-light t)
 
-;;; ===============================================
 
-(defun mike-swap-buffers ()
-  "Put the buffer from the selected window in next window, and vice versa."
-  (interactive)
-  (let* ((this (selected-window))
-     (other (next-window))
-     (this-buffer (window-buffer this))
-     (other-buffer (window-buffer other)))
-    (set-window-buffer other this-buffer)
-    (set-window-buffer this other-buffer)
-    ))
-
-;;; ===============================================
+;; * HASKELL
 
 (add-hook 'haskell-mode-hook 'turn-on-haskell-indentation)
 
-;;; ==================
-;;; = CUSTOMIZATIONS =
-;;; ==================
+;; * ORG-MODE
+
+(try-require 'org)
+
+;; Org-mode and mobile-org customizations
+;; set org-mobile-encryption-password in custom
+(setq dropbox-dir (expand-file-name "~/Dropbox"))
+(setq org-directory (expand-file-name "org" dropbox-dir))
+(setq org-agenda-file (expand-file-name "agendafiles.txt" org-directory))
+(setq org-mobile-directory (expand-file-name "MobileOrg" dropbox-dir))
+(setq org-mobile-inbox-for-pull (expand-file-name "flagged.org" org-directory))
+
+;; Enable column number mode everywhere.
+(setq column-number-mode t)
+
+;; ** Outshine
+
+(when (require 'outshine nil 'NOERROR)
+  (add-hook 'outline-minor-mode-hook 'outshine-hook-function)
+  (add-hook 'org-mode-hook
+            (lambda ()
+              ;; Redefine arrow keys, since promoting/demoting and moving
+              ;; subtrees up and down are less frequent tasks then
+              ;; navigation and visibility cycling
+              (org-defkey org-mode-map
+                          (kbd "M-<left>") 'outline-hide-more)
+              (org-defkey org-mode-map
+                          (kbd "M-<right>") 'outline-show-more)
+              (org-defkey org-mode-map
+                          (kbd "M-<up>") 'outline-previous-visible-heading)
+              (org-defkey org-mode-map
+                          (kbd "M-<down>") 'outline-next-visible-heading))
+            'append)
+  (add-hook 'emacs-lisp-mode-hook 'outline-minor-mode))
+
+
+;; * CUSTOM FILE
 
 ;; Separate custom file.
 (when (not (featurep 'aquamacs))
@@ -412,12 +611,19 @@ Don't mess with special buffers."
   (when (file-exists-p after-file)
     (load-file after-file)))
 
+
+;; * EMACS SERVER
+
+(defvar mike-server-start t
+  "Start server after initialization.  Default is true.")
+
 ;; Start Emacs server.
 (require 'server)
 (when (and mike-server-start (not (server-running-p)))
   (server-start))
 
-;;; ===============================================
+
+;; * FINISH
 
 ;; Time Emacs startup complete.
 (message "Emacs startup in %ds"
