@@ -41,7 +41,7 @@ See URL `http://a-nickels-worth.blogspot.com/2007/11/effective-emacs.html'.")
 
 ;; ** BUFFER UTILS
 
-(defun narrow-to-region-indirect (start end)
+(defun mike-narrow-to-region-indirect (start end)
   "Restrict editing in this buffer to the current region, indirectly."
   (interactive "r")
   (deactivate-mark)
@@ -58,8 +58,7 @@ See URL `http://a-nickels-worth.blogspot.com/2007/11/effective-emacs.html'.")
          (this-buffer (window-buffer this))
          (other-buffer (window-buffer other)))
     (set-window-buffer other this-buffer)
-    (set-window-buffer this other-buffer)
-    ))
+    (set-window-buffer this other-buffer)))
 
 
 ;; * PATH
@@ -238,10 +237,68 @@ From URL `http://www.mygooglest.com/fni/dot-emacs.html'."
   (exec-path-from-shell-initialize))
 
 
+
+;; * GLOBAL MODES
+
+;; Recent files
+(when (try-require 'recentf)
+  (recentf-mode))
+
+;; Autopair everywhere except lisp, where we use paredit
+(when (try-require 'autopair)
+  (autopair-global-mode))
+
+;; I like the menu bar, disabled in starter-kit
+(when window-system
+  (menu-bar-mode))
+
+;; ** GLOBAL KEYBINDINGS
+
+(global-set-key (kbd "RET") 'newline-and-indent)
+(global-set-key (kbd "C-j") 'reindent-then-newline-and-indent)
+
+(global-set-key (kbd "C-c g") 'magit-status)
+
+
+;; * ORG-MODE
+
+(try-require 'org)
+
+;; Org-mode and mobile-org customizations
+;; set org-mobile-encryption-password in custom
+(setq dropbox-dir (expand-file-name "~/Dropbox"))
+(setq org-directory (expand-file-name "org" dropbox-dir))
+(setq org-agenda-file (expand-file-name "agendafiles.txt" org-directory))
+(setq org-mobile-directory (expand-file-name "MobileOrg" dropbox-dir))
+(setq org-mobile-inbox-for-pull (expand-file-name "flagged.org" org-directory))
+
+;; Enable column number mode everywhere.
+(setq column-number-mode t)
+
+;; ** Outshine
+
+(when (require 'outshine nil 'NOERROR)
+  (add-hook 'outline-minor-mode-hook 'outshine-hook-function)
+  (add-hook 'org-mode-hook
+            (lambda ()
+              ;; Redefine arrow keys, since promoting/demoting and moving
+              ;; subtrees up and down are less frequent tasks then
+              ;; navigation and visibility cycling
+              (org-defkey org-mode-map
+                          (kbd "M-<left>") 'outline-hide-more)
+              (org-defkey org-mode-map
+                          (kbd "M-<right>") 'outline-show-more)
+              (org-defkey org-mode-map
+                          (kbd "M-<up>") 'outline-previous-visible-heading)
+              (org-defkey org-mode-map
+                          (kbd "M-<down>") 'outline-next-visible-heading))
+            'append)
+  (add-hook 'emacs-lisp-mode-hook 'outline-minor-mode))
+
+
 ;; * PERL
 
-(when (and (try-require 'autopair)
-           (try-require 'cperl-mode))
+(when (try-require 'cperl-mode)
 
   ;; modes
   (add-to-list 'interpreter-mode-alist '("perl" . cperl-mode))
@@ -259,36 +316,36 @@ From URL `http://www.mygooglest.com/fni/dot-emacs.html'."
           cperl-indent-parens-as-block      t
           cperl-tab-always-indent           t
           cperl-merge-trailing-else         nil)
-    (auto-fill-mode 0)
-    (autopair-mode 1))
+    (auto-fill-mode 0))
+
   (add-hook 'cperl-mode-hook 'mike-cperl-mode-hook))
 
 
 ;; * SCALA
 
-(add-to-list 'auto-mode-alist '("\\.sbt\\'" . scala-mode))
-
-;; Add ensime to scala
 (when (and (try-require 'scala-mode)
            (try-require 'ensime))
+  (add-to-list 'auto-mode-alist '("\\.sbt\\'" . scala-mode))
+  ;; Add ensime to scala
   (add-hook 'scala-mode-hook 'ensime-scala-mode-hook))
 
 
 ;; * YAML
 
-(add-to-list 'auto-mode-alist '("\\.cfg\\'" . yaml-mode))
+(when (try-require 'yaml-mode)
+  (add-to-list 'auto-mode-alist '("\\.cfg\\'" . yaml-mode)))
 
 
 ;; * GRAPHVIZ DOT
 
-(try-require 'graphviz-dot-mode)
+(when (try-require 'graphviz-dot-mode)
 
-(add-to-list 'auto-mode-alist '("\\.gv\\'" . graphviz-dot-mode))
+  (add-to-list 'auto-mode-alist '("\\.gv\\'" . graphviz-dot-mode))
 
-;; Graphviz customizations
-(setq graphviz-dot-auto-indent-on-braces nil)
-(setq graphviz-dot-auto-indent-on-semi nil)
-(setq graphviz-dot-indent-width 4)
+  ;; Graphviz customizations
+  (setq graphviz-dot-auto-indent-on-braces nil)
+  (setq graphviz-dot-auto-indent-on-semi nil)
+  (setq graphviz-dot-indent-width 4))
 
 
 ;; * SQL
@@ -306,14 +363,16 @@ From URL `http://www.mygooglest.com/fni/dot-emacs.html'."
 ;; Add paredit-mode to IELM
 (when (and (try-require 'ielm)
            (try-require 'paredit))
-  (add-hook 'ielm-mode-hook 'paredit-mode))
+
+  (defun mike-ielm-mode-hook ()
+    (autopair-mode 0)
+    (paredit-mode 1))
+  (add-hook 'ielm-mode-hook 'mike-ielm-mode-hook))
 
 
 ;; * JAVASCRIPT
 
-(when (and (try-require 'js)
-           (try-require 'autopair))
-  (add-hook 'js-mode-hook 'autopair-mode))
+(try-require 'js)
 
 
 ;; * TERM
@@ -350,28 +409,16 @@ From URL `http://www.mygooglest.com/fni/dot-emacs.html'."
 (global-set-key (kbd "C-c t") 'visit-ansi-term)
 
 
-;; * EMACS MENU
-
-(when window-system
-  (menu-bar-mode))
-
-;; * FILE UTILS
-
-;; Recent files
-(recentf-mode)
-
 ;; * TEX
+
+(try-require 'auctex-autoloads)
 
 ;; Load auctex settings
 (when (featurep 'ns)
+  ;; Settings work on OS X; work on making these xplaf
   (setq TeX-PDF-mode t
         TeX-view-program-list '(("Open" "open \"%o\""))
         TeX-view-program-selection '((output-pdf "Open"))))
-
-(global-set-key (kbd "RET") 'newline-and-indent)
-(global-set-key (kbd "C-j") 'reindent-then-newline-and-indent)
-
-(global-set-key (kbd "C-c g") 'magit-status)
 
 
 ;; * SCHEME
@@ -380,7 +427,7 @@ From URL `http://www.mygooglest.com/fni/dot-emacs.html'."
 ;; Disable read-only prompt in Geiser.
 ;; The read-only prompt doesn't play nicely with custom REPLs
 ;; such as in SICP.
-(setq geiser-repl-read-only-promp-p nil)
+(setq geiser-repl-read-only-prompt-p nil)
 (eval-after-load "geiser"
   (progn
     (add-hook 'geiser-repl-mode-hook 'paredit-mode)))
@@ -563,42 +610,6 @@ Don't mess with special buffers."
 ;; * HASKELL
 
 (add-hook 'haskell-mode-hook 'turn-on-haskell-indentation)
-
-;; * ORG-MODE
-
-(try-require 'org)
-
-;; Org-mode and mobile-org customizations
-;; set org-mobile-encryption-password in custom
-(setq dropbox-dir (expand-file-name "~/Dropbox"))
-(setq org-directory (expand-file-name "org" dropbox-dir))
-(setq org-agenda-file (expand-file-name "agendafiles.txt" org-directory))
-(setq org-mobile-directory (expand-file-name "MobileOrg" dropbox-dir))
-(setq org-mobile-inbox-for-pull (expand-file-name "flagged.org" org-directory))
-
-;; Enable column number mode everywhere.
-(setq column-number-mode t)
-
-;; ** Outshine
-
-(when (require 'outshine nil 'NOERROR)
-  (add-hook 'outline-minor-mode-hook 'outshine-hook-function)
-  (add-hook 'org-mode-hook
-            (lambda ()
-              ;; Redefine arrow keys, since promoting/demoting and moving
-              ;; subtrees up and down are less frequent tasks then
-              ;; navigation and visibility cycling
-              (org-defkey org-mode-map
-                          (kbd "M-<left>") 'outline-hide-more)
-              (org-defkey org-mode-map
-                          (kbd "M-<right>") 'outline-show-more)
-              (org-defkey org-mode-map
-                          (kbd "M-<up>") 'outline-previous-visible-heading)
-              (org-defkey org-mode-map
-                          (kbd "M-<down>") 'outline-next-visible-heading))
-            'append)
-  (add-hook 'emacs-lisp-mode-hook 'outline-minor-mode))
-
 
 ;; * CUSTOM FILE
 
