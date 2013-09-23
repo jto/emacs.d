@@ -247,6 +247,8 @@ From URL `http://www.mygooglest.com/fni/dot-emacs.html'."
 (when (try-require 'recentf)
   (recentf-mode))
 
+(try-require 'yasnippet)
+
 ;; I like the menu bar, disabled in starter-kit
 (when window-system
   (menu-bar-mode))
@@ -299,6 +301,8 @@ From URL `http://www.mygooglest.com/fni/dot-emacs.html'."
 
 (when (try-require 'cperl-mode)
 
+  (try-require 'autopair)
+
   ;; modes
   (add-to-list 'interpreter-mode-alist '("perl" . cperl-mode))
   (add-to-list 'interpreter-mode-alist '("perl5" . cperl-mode))
@@ -315,7 +319,8 @@ From URL `http://www.mygooglest.com/fni/dot-emacs.html'."
           cperl-indent-parens-as-block      t
           cperl-tab-always-indent           t
           cperl-merge-trailing-else         nil)
-    (auto-fill-mode 0))
+    (auto-fill-mode 0)
+    (when (featurep 'autopair) (autopair-mode 1)))
 
   (add-hook 'cperl-mode-hook 'mike-cperl-mode-hook))
 
