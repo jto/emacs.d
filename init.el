@@ -166,7 +166,10 @@ Update `load-path' with `mike-plugins-dir'."
              color-theme-solarized
              virtualenv
              scala-mode2
-             haskell-mode))
+             haskell-mode
+             org
+             outshine
+             multi-term))
   (pushnew p mike-package-packages))
 
 (defvar mike-exclude-packages '()
@@ -408,6 +411,31 @@ From URL `http://www.mygooglest.com/fni/dot-emacs.html'."
 (global-set-key (kbd "<f2>") 'visit-ansi-term)
 (global-set-key (kbd "C-c t") 'visit-ansi-term)
 
+(defvar mike-term-shell "/bin/bash")
+(defadvice ansi-term (before force-bash)
+  (interactive (list mike-term-shell)))
+(ad-activate 'ansi-term)
+
+(defun mike-term-use-utf8 ()
+  (set-buffer-process-coding-system 'utf-8-unix 'utf-8-unix))
+(add-hook 'term-exec-hook 'mike-term-use-utf8)
+
+(defun mike-term-paste (&optional string)
+  (interactive)
+  (process-send-string
+   (get-buffer-process (current-buffer))
+   (if string string (current-kill 0))))
+(defun mike-term-mode-hook ()
+  (goto-address-mode)
+  (define-key term-raw-map "\C-y" 'mike-term-paste)
+  (autopair-mode 0))
+(add-hook 'term-mode-hook 'mike-term-mode-hook)
+
+;; ** MULTI-TERM
+
+(when (try-require 'multi-term)
+  (setq multi-term-program "/bin/bash"))
+
 
 ;; * TEX
 
@@ -571,25 +599,6 @@ Don't mess with special buffers."
         (kill-buffer buffer))
     ad-do-it))
 ;; (ad-activate 'term-sentinel)
-
-(defvar mike-term-shell "/bin/bash")
-(defadvice ansi-term (before force-bash)
-  (interactive (list mike-term-shell)))
-(ad-activate 'ansi-term)
-
-(defun mike-term-use-utf8 ()
-  (set-buffer-process-coding-system 'utf-8-unix 'utf-8-unix))
-(add-hook 'term-exec-hook 'mike-term-use-utf8)
-
-(defun mike-term-paste (&optional string)
-  (interactive)
-  (process-send-string
-   (get-buffer-process (current-buffer))
-   (if string string (current-kill 0))))
-(defun mike-term-hook ()
-  (goto-address-mode)
-  (define-key term-raw-map "\C-y" 'mike-term-paste))
-(add-hook 'term-mode-hook 'mike-term-hook)
 
 
 ;; * PYTHON
