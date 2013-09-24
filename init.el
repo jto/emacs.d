@@ -464,10 +464,14 @@ From URL `http://www.emacswiki.org/emacs/MultiTerm'."
     (let ((b (mike-last-term-buffer (buffer-list))))
       (if (or (not b) (eq 'term-mode major-mode))
           (multi-term)
-        (switch-to-buffer b))))
+        (let ((vis (get-buffer-window-list b)))
+          (if vis
+              (pop-to-buffer b 'display-buffer-reuse-window)
+            (switch-to-buffer b))))))
 
   (setq multi-term-program mike-multi-term-program)
   (setq multi-term-switch-after-close t)
+
   (global-set-key (kbd "<f2>") 'mike-get-term)
   (global-set-key (kbd "C-c t") 'mike-get-term))
 
