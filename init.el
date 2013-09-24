@@ -475,6 +475,9 @@ From URL `http://www.emacswiki.org/emacs/MultiTerm'."
   (setq multi-term-program mike-multi-term-program)
   (setq multi-term-switch-after-close t)
 
+  (define-key term-raw-map (kbd "C-c C-j") 'term-line-mode)
+  (define-key term-raw-map (kbd "C-c C-k") 'term-char-mode)
+
   (global-set-key (kbd "<f2>") 'mike-get-term)
   (global-set-key (kbd "C-c t") 'mike-get-term))
 
