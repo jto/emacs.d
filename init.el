@@ -260,6 +260,9 @@ From URL `http://www.mygooglest.com/fni/dot-emacs.html'."
 
 (global-set-key (kbd "C-c g") 'magit-status)
 
+(defun mike-man-mode-hook () (setq show-trailing-whitespace nil))
+(eval-after-load "man"
+  '(add-hook 'man-mode-hook 'mike-man-mode-hook))
 
 ;; * ORG-MODE
 
