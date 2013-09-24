@@ -383,63 +383,92 @@ From URL `http://www.mygooglest.com/fni/dot-emacs.html'."
 
 
 ;; * TERM
-;; From
-;; http://www.enigmacurry.com/2008/12/26/emacs-ansi-term-tricks/
-(require 'term)
-(defun visit-ansi-term ()
-  "If the current buffer is:
+
+;; ** ANSI-TERM
+(when (try-require 'term)
+
+  (defun mike-visit-ansi-term ()
+    "If the current buffer is:
 1) a running `ansi-term' named *ansi-term*, rename it.
-     2) a stopped `ansi-term', kill it and create a new one.
-     3) a non `ansi-term', go to an already running `ansi-term'
-        or start a new one while killing a defunt one"
-  (interactive)
-  (let ((is-term (string= "term-mode" major-mode))
-        (is-running (term-check-proc (buffer-name)))
-        (term-cmd "/bin/bash")
-        (anon-term (get-buffer "*ansi-term*")))
-    (if is-term
-        (if is-running
-            (if (string= "*ansi-term*" (buffer-name))
-                (call-interactively 'rename-buffer)
-              (if anon-term
-                  (switch-to-buffer "*ansi-term*")
-                (ansi-term term-cmd)))
-          (kill-buffer (buffer-name))
-          (ansi-term term-cmd))
-      (if anon-term
-          (if (term-check-proc "*ansi-term*")
-              (switch-to-buffer "*ansi-term*")
-            (kill-buffer "*ansi-term*")
+2) a stopped `ansi-term', kill it and create a new one.
+3) a non `ansi-term',
+go to an already running `ansi-term' or start a new one
+while killing a defunct one.
+
+From URL `http://www.enigmacurry.com/2008/12/26/emacs-ansi-term-tricks/'."
+    (interactive)
+    (let ((is-term (string= "term-mode" major-mode))
+          (is-running (term-check-proc (buffer-name)))
+          (term-cmd "/bin/bash")
+          (anon-term (get-buffer "*ansi-term*")))
+      (if is-term
+          (if is-running
+              (if (string= "*ansi-term*" (buffer-name))
+                  (call-interactively 'rename-buffer)
+                (if anon-term
+                    (switch-to-buffer "*ansi-term*")
+                  (ansi-term term-cmd)))
+            (kill-buffer (buffer-name))
             (ansi-term term-cmd))
-        (ansi-term term-cmd)))))
-(global-set-key (kbd "<f2>") 'visit-ansi-term)
-(global-set-key (kbd "C-c t") 'visit-ansi-term)
+        (if anon-term
+            (if (term-check-proc "*ansi-term*")
+                (switch-to-buffer "*ansi-term*")
+              (kill-buffer "*ansi-term*")
+              (ansi-term term-cmd))
+          (ansi-term term-cmd)))))
+  (global-set-key (kbd "<f2>") 'mike-visit-ansi-term)
+  (global-set-key (kbd "C-c t") 'mike-visit-ansi-term)
 
-(defvar mike-term-shell "/bin/bash")
-(defadvice ansi-term (before force-bash)
-  (interactive (list mike-term-shell)))
-(ad-activate 'ansi-term)
+  (defvar mike-term-shell "/bin/bash")
+  (defadvice ansi-term (before force-bash)
+    (interactive (list mike-term-shell)))
+  (ad-activate 'ansi-term)
 
-(defun mike-term-use-utf8 ()
-  (set-buffer-process-coding-system 'utf-8-unix 'utf-8-unix))
-(add-hook 'term-exec-hook 'mike-term-use-utf8)
+  (defun mike-term-use-utf8 ()
+    (set-buffer-process-coding-system 'utf-8-unix 'utf-8-unix))
+  (add-hook 'term-exec-hook 'mike-term-use-utf8)
 
-(defun mike-term-paste (&optional string)
-  (interactive)
-  (process-send-string
-   (get-buffer-process (current-buffer))
-   (if string string (current-kill 0))))
-(defun mike-term-mode-hook ()
-  (goto-address-mode)
-  (define-key term-raw-map "\C-y" 'mike-term-paste)
-  (autopair-mode 0)
-  (setq show-trailing-whitespace nil))
-(add-hook 'term-mode-hook 'mike-term-mode-hook)
+  (defun mike-term-paste (&optional string)
+    (interactive)
+    (process-send-string
+     (get-buffer-process (current-buffer))
+     (if string string (current-kill 0))))
+  (defun mike-term-mode-hook ()
+    (goto-address-mode)
+    (define-key term-raw-map "\C-y" 'mike-term-paste)
+    (autopair-mode 0)
+    (setq show-trailing-whitespace nil))
+  (add-hook 'term-mode-hook 'mike-term-mode-hook))
 
 ;; ** MULTI-TERM
 
 (when (try-require 'multi-term)
-  (setq multi-term-program "/bin/bash"))
+  (defvar mike-multi-term-program "/bin/bash"
+    "Shell to run with multi-term, bash by default.")
+
+  (defun mike-last-term-buffer (l)
+    "Return most recently used term buffer.
+
+From URL `http://www.emacswiki.org/emacs/MultiTerm'."
+    (when l
+      (if (eq 'term-mode (with-current-buffer (car l) major-mode))
+          (car l) (mike-last-term-buffer (cdr l)))))
+
+  (defun mike-get-term ()
+    "Switch to the term buffer last used, or create a new one if
+none exists, or if the current buffer is already a term.
+
+From URL `http://www.emacswiki.org/emacs/MultiTerm'."
+    (interactive)
+    (let ((b (mike-last-term-buffer (buffer-list))))
+      (if (or (not b) (eq 'term-mode major-mode))
+          (multi-term)
+        (switch-to-buffer b))))
+
+  (setq multi-term-program mike-multi-term-program)
+  (setq multi-term-switch-after-close t)
+  (global-set-key (kbd "<f2>") 'mike-get-term)
+  (global-set-key (kbd "C-c t") 'mike-get-term))
 
 
 ;; * TEX
