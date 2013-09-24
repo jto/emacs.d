@@ -295,6 +295,7 @@ From URL `http://www.mygooglest.com/fni/dot-emacs.html'."
                           (kbd "M-<down>") 'outline-next-visible-heading))
             'append)
   (add-hook 'emacs-lisp-mode-hook 'outline-minor-mode)
+  (add-hook 'sh-mode-hook 'outline-minor-mode)
   (eval-after-load "outline"
     (progn
       (define-key outline-minor-mode-map (kbd "<tab>") nil))))
