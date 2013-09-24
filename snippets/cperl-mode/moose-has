@@ -6,7 +6,7 @@
 # --
 has $1 => (
     is => 'ro',
-    isa => '${2:Str}',
+    isa => ${2:'Str'},
     lazy => 1,
     builder => '${3:_build_$1}',
 );
