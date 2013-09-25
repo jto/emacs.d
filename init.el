@@ -301,7 +301,9 @@ From URL `http://www.mygooglest.com/fni/dot-emacs.html'."
   (add-hook 'sh-mode-hook 'outline-minor-mode)
   (eval-after-load "outline"
     (progn
-      (define-key outline-minor-mode-map (kbd "<tab>") nil))))
+      (define-key outline-minor-mode-map (kbd "<tab>") nil)
+      (define-key outline-minor-mode-map
+        (kbd "C-c C-o") 'outline-toggle-children))))
 
 
 ;; * PERL
