@@ -472,11 +472,17 @@ From URL `http://www.emacswiki.org/emacs/MultiTerm'."
               (pop-to-buffer b 'display-buffer-reuse-window)
             (switch-to-buffer b))))))
 
+  (defun mike-term-send-escape ()
+    "Send <esc> in term mode."
+    (interactive)
+    (term-send-raw-string "\e"))
+
   (setq multi-term-program mike-multi-term-program)
   (setq multi-term-switch-after-close t)
 
-  (define-key term-raw-map (kbd "C-c C-j") 'term-line-mode)
-  (define-key term-raw-map (kbd "C-c C-k") 'term-char-mode)
+  (add-to-list 'term-bind-key-alist '("C-c C-e" . mike-term-send-escape))
+  (add-to-list 'term-bind-key-alist '("C-c C-j" . 'term-line-mode))
+  (add-to-list 'term-bind-key-alist '("C-c C-k" . 'term-char-mode))
 
   (global-set-key (kbd "<f2>") 'mike-get-term)
   (global-set-key (kbd "C-c t") 'mike-get-term))
