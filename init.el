@@ -515,8 +515,9 @@ From URL `http://www.emacswiki.org/emacs/MultiTerm'."
 ;; * SSH
 
 (defcustom fixssh-data-file
-  (expand-file-name (concat "~/usr/bin/fixssh_"
-                            (getenv "HOSTNAME")))
+  (expand-file-name (concat "fixssh_"
+                            (getenv "HOSTNAME"))
+                    (expand-file-name "local/bin" (getenv "HOME")))
   "The name of the file that contains environment info from grabssh."
   :type '(string))
 
