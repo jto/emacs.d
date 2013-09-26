@@ -283,7 +283,23 @@ From URL `http://www.mygooglest.com/fni/dot-emacs.html'."
   (exec-path-from-shell-initialize))
 
 
-;; * GLOBAL MODES
+;; * GLOBAL SETTINGS
+
+;; Backups
+
+(defcustom mike-backup-dir
+  (expand-file-name "backups" user-emacs-directory)
+  "Directory for Emacs backups. Default is `user-emacs-directory'/backups."
+  :type 'string)
+
+;; backup directory and temporary files
+(make-directory mike-backup-dir t)
+(setq backup-directory-alist `(("." . ,mike-backup-dir)))
+(setq auto-save-file-name-transforms
+      `((".*" ,mike-backup-dir t)))
+(setq vc-make-backup-files t)
+
+;; ** GLOBAL MODES
 
 ;; Recent files
 (when (try-require 'recentf)
