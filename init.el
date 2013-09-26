@@ -497,7 +497,8 @@ Default is true."
         cperl-indent-parens-as-block      t
         cperl-tab-always-indent           t
         cperl-merge-trailing-else         nil)
-  (auto-fill-mode 0))
+  (auto-fill-mode 0)
+  (when (featurep 'outshine) (outline-minor-mode 1)))
 
 (defun mike-after-cperl-load ()
   (add-hook 'cperl-mode-hook 'mike-cperl-mode-hook))
