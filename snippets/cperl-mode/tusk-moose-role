@@ -27,6 +27,11 @@ package ${1:`(mapconcat 'identity
              "/")
            "::")`};
 
+
+###########
+# * Imports
+###########
+
 use 5.008;
 use strict;
 use warnings;
@@ -40,26 +45,34 @@ use TUSK::Types ':all';
 
 use Moose::Role;
 
-####################
-# Class attributes #
-####################
+###################
+# * Role attributes
+###################
 
 $0
 
-#################
-# Class methods #
-#################
+############
+# * Builders
+############
+
+################
+# * Role methods
+################
 
 ###################
-# Private methods #
+# * Private methods
 ###################
 
 ###########
-# Cleanup #
+# * Cleanup
 ###########
 
 no Moose::Role;
 1;
+
+###########
+# * Perldoc
+###########
 
 __END__
 
