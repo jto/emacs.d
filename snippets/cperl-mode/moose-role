@@ -1,0 +1,97 @@
+# -*- mode: snippet -*-
+# name: moose-role
+# key: role
+# expand-env: ((yas/indent-line 'fixed) (yas/wrap-around-region 'nil))
+# --
+package ${1:`(mapconcat 'identity
+           (split-string
+             (let ((buf (buffer-file-name)))
+               (and (string-match "lib/\\(.*\\)\\.pm\\'"
+                                  (buffer-file-name))
+                    (match-string 1 buf)))
+             "/")
+           "::")`};
+
+###########
+# * Imports
+###########
+
+use Carp;
+use Readonly;
+use MooseX::Types::Moose ':all';
+
+#########
+# * Setup
+#########
+
+use Moose::Role;
+
+###################
+# * Role attributes
+###################
+
+$0
+
+############
+# * Builders
+############
+
+################
+# * Role methods
+################
+
+###################
+# * Private methods
+###################
+
+###########
+# * Cleanup
+###########
+
+no Moose::Role;
+1;
+
+###########
+# * Perldoc
+###########
+
+__END__
+
+=head1 NAME
+
+$1 - ${3:A short description of the module's purpose}
+
+=head1 VERSION
+
+This documentation refers to L<$1>, currently in development.
+
+=head1 SYNOPSIS
+
+  use $1;
+
+=head1 DESCRIPTION
+
+=head1 ATTRIBUTES
+
+=head1 METHODS
+
+=head1 DIAGNOSTICS
+
+=head1 CONFIGURATION AND ENVIRONMENT
+
+=head1 INCOMPATIBILITIES
+
+This module has no known incompatibilities.
+
+=head1 BUGS AND LIMITATIONS
+
+There are no known bugs in this module. Please report problems to
+${4:`mike-name`} <L<${5:`mike-email`}|mailto:$5>>. Patches are
+welcome.
+
+=head1 LICENSE AND COPYRIGHT
+
+Copyright `(format-time-string "%Y")` $4.
+
+This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.
