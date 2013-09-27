@@ -64,7 +64,7 @@ $1 - ${3:A short description of the module's purpose}
 
 =head1 VERSION
 
-This documentation refers to L<$1> v$2.
+This documentation refers to L<$1>, currently in development.
 
 =head1 SYNOPSIS
 
