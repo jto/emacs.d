@@ -16,14 +16,8 @@ package ${1:`(mapconcat 'identity
 # * Imports
 ###########
 
-use 5.008;
-use strict;
-use warnings;
-use utf8;
-use version; our $VERSION = qv('${2:0.0.1}');
 use Carp;
 use Readonly;
-
 use MooseX::Types::Moose ':all';
 
 #########
@@ -93,7 +87,7 @@ This module has no known incompatibilities.
 =head1 BUGS AND LIMITATIONS
 
 There are no known bugs in this module. Please report problems to
-L<${4:`mike-name`}|mailto:${5:`mike-email`}>. Patches are
+${4:`mike-name`} <L<${5:`mike-email`}|mailto:$5>>. Patches are
 welcome.
 
 =head1 LICENSE AND COPYRIGHT
