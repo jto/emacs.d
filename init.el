@@ -34,8 +34,8 @@ Customize these options as desired.")
 returned by `user-login-name'."
   :type 'string)
 
-(defcustom mike-email user-mail-address
-  "Email of current user. Default is `user-mail-address'."
+(defcustom mike-email ""
+  "Email of current user. Default is the empty string."
   :type 'string)
 
 (defcustom mike-name (user-full-name)
@@ -95,10 +95,31 @@ returned by `user-login-name'."
   "Untabify and strip trailing whitespace in current buffer."
   (interactive)
   (save-excursion
-    (untabify 0 (buffer-size))
-    (delete-trailing-whitespace 0 nil)))
+    (untabify (point-min) (point-max))
+    (delete-trailing-whitespace (point-min) (point-max))))
 
 (global-set-key (kbd "C-c .") 'mike-clean-buffer)
+
+(defun mike-rename-buffer-file ()
+  "Renames current buffer and file it is visiting.
+
+From URL `http://whattheemacsd.com/'."
+  (interactive)
+  (let ((name (buffer-name))
+        (filename (buffer-file-name)))
+    (if (not (and filename (file-exists-p filename)))
+        (error "Buffer '%s' is not visiting a file!" name)
+      (let ((new-name (read-file-name "New name: " filename)))
+        (if (get-buffer new-name)
+            (error "A buffer named '%s' already exists!" new-name)
+          (rename-file filename new-name 1)
+          (rename-buffer new-name)
+          (set-visited-file-name new-name)
+          (set-buffer-modified-p nil)
+          (message "File '%s' successfully renamed to '%s'"
+                   name (file-name-nondirectory new-name)))))))
+
+(global-set-key (kbd "C-x C-r") 'mike-rename-buffer-file)
 
 
 ;; * PATH
@@ -198,6 +219,8 @@ Update `load-path' with `mike-plugins-dir'."
              starter-kit-lisp
              starter-kit-bindings
              starter-kit-eshell
+             elisp-slime-nav
+             diminish
              magit
              geiser
              graphviz-dot-mode
@@ -543,6 +566,14 @@ Default is true."
 
 ;; * ELISP
 
+;; Elisp go-to-definition with M-. and back again with M-,
+(autoload 'elisp-slime-nav-mode "elisp-slime-nav")
+(add-hook 'emacs-lisp-mode-hook (lambda () (elisp-slime-nav-mode t)))
+(defun mike-after-elisp-load ()
+  (diminish 'elisp-slime-nav-mode))
+(eval-after-load 'elisp-slime-nav '(mike-after-elisp-load))
+
+
 ;; ** IELM
 
 ;; Add paredit-mode to IELM
@@ -781,6 +812,10 @@ Requires grabssh to put SSH variables in the file identified by
 
 
 ;; * FINISH
+
+;; Diminish modeline clutter
+(when (try-require 'diminish)
+  (diminish 'yas-minor-mode))
 
 ;; Final machine-specific settings.
 (let ((after-file (expand-file-name "after-init.el" user-emacs-directory)))
