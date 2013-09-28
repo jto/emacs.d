@@ -781,6 +781,11 @@ Requires grabssh to put SSH variables in the file identified by
       eshell-git/pwd-face 'default
       eshell-git/branch-face 'default)
 
+(defun mike-eshell-mode-hook ()
+  (setq show-trailing-whitespace nil))
+
+(add-hook 'eshell-mode-hook 'mike-eshell-mode-hook)
+
 
 ;; * PYTHON
 
