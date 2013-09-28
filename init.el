@@ -781,6 +781,21 @@ Requires grabssh to put SSH variables in the file identified by
       eshell-git/pwd-face 'default
       eshell-git/branch-face 'default)
 
+(defun perldoc (man-args)
+  (interactive "sPerldoc: ")
+  (require 'man)
+  (let ((manual-program "perldoc"))
+    (man man-args)))
+
+(defun eshell/perldoc (&rest args)
+  "Like `eshell/man', but invoke `perldoc'."
+  (if (member (car args) '("-l" "-h"))
+      (eshell-wait-for-process
+       (eshell-external-command "perldoc" args))
+    (funcall 'perldoc (apply 'eshell-flatten-and-stringify args))))
+
+(eshell-find-interpreter "perldoc")
+
 (defun mike-eshell-mode-hook ()
   (setq show-trailing-whitespace nil))
 
