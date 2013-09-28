@@ -511,6 +511,7 @@ Default is true."
 
 (add-to-list 'auto-mode-alist '("\\.\\([pP][Llm]\\)\\'" . cperl-mode))
 (add-to-list 'auto-mode-alist '("\\.psgi\\'" . cperl-mode))
+(add-to-list 'auto-mode-alist '("cpanfile\\'" . cperl-mode))
 
 ;; CPerl customizations
 (defun mike-cperl-mode-hook ()
