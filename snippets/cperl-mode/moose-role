@@ -18,7 +18,6 @@ package ${1:`(mapconcat 'identity
 
 use Carp;
 use Readonly;
-use MooseX::Types::Moose ':all';
 
 #########
 # * Setup
