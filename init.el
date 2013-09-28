@@ -683,12 +683,18 @@ From URL `http://www.emacswiki.org/emacs/MultiTerm'."
     (interactive)
     (term-send-raw-string "\e"))
 
+  (defun mike-term-send-tab ()
+    "Send <tab> in term mode."
+    (interactive)
+    (term-send-raw-string "\t"))
+
   (setq multi-term-program mike-multi-term-program)
   (setq multi-term-switch-after-close t)
 
   (add-to-list 'term-bind-key-alist '("C-c C-e" . mike-term-send-escape))
-  (add-to-list 'term-bind-key-alist '("C-c C-j" . 'term-line-mode))
-  (add-to-list 'term-bind-key-alist '("C-c C-k" . 'term-char-mode))
+  (add-to-list 'term-bind-key-alist '("C-c C-j" . term-line-mode))
+  (add-to-list 'term-bind-key-alist '("C-c C-k" . term-char-mode))
+  (add-to-list 'term-bind-key-alist '("<tab>"   . mike-term-send-tab))
 
   (global-set-key (kbd "<f2>") 'mike-get-term)
   (global-set-key (kbd "C-c t") 'mike-get-term))
