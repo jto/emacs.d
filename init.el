@@ -121,6 +121,25 @@ From URL `http://whattheemacsd.com/'."
 
 (global-set-key (kbd "C-x C-r") 'mike-rename-buffer-file)
 
+(defun mike-last-mode-buffer (mode l)
+  "Get latest buffer with major-mode MODE in buffer list L."
+  (when l
+    (if (eq mode (with-current-buffer (car l) major-mode))
+        (car l)
+      (mike-last-mode-buffer mode (cdr l)))))
+
+(defun mike-get-mode-buffer (mode f)
+  "Pop to or create a buffer with major-mode MODE.
+
+Create with creation function F."
+  (let ((b (mike-last-mode-buffer mode (buffer-list))))
+    (if (or (not b) (eq mode major-mode))
+        (funcall f)
+      (let ((vis (get-buffer-window-list b)))
+        (if vis
+            (pop-to-buffer b 'display-buffer-reuse-window)
+          (switch-to-buffer b))))))
+
 
 ;; * PATH
 
@@ -657,27 +676,13 @@ From URL `http://www.enigmacurry.com/2008/12/26/emacs-ansi-term-tricks/'."
   (defvar mike-multi-term-program "/bin/bash"
     "Shell to run with multi-term, bash by default.")
 
-  (defun mike-last-term-buffer (l)
-    "Return most recently used term buffer.
-
-From URL `http://www.emacswiki.org/emacs/MultiTerm'."
-    (when l
-      (if (eq 'term-mode (with-current-buffer (car l) major-mode))
-          (car l) (mike-last-term-buffer (cdr l)))))
-
   (defun mike-get-term ()
     "Switch to the term buffer last used, or create a new one if
 none exists, or if the current buffer is already a term.
 
 From URL `http://www.emacswiki.org/emacs/MultiTerm'."
     (interactive)
-    (let ((b (mike-last-term-buffer (buffer-list))))
-      (if (or (not b) (eq 'term-mode major-mode))
-          (multi-term)
-        (let ((vis (get-buffer-window-list b)))
-          (if vis
-              (pop-to-buffer b 'display-buffer-reuse-window)
-            (switch-to-buffer b))))))
+    (mike-get-mode-buffer 'term-mode 'multi-term))
 
   (defun mike-term-send-escape ()
     "Send <esc> in term mode."
@@ -769,6 +774,12 @@ Requires grabssh to put SSH variables in the file identified by
 
 (require 'eshell)
 (require 'em-hist)
+
+(defun mike-get-eshell ()
+  (interactive)
+  (mike-get-mode-buffer 'eshell-mode (lambda () (eshell t))))
+
+(global-set-key (kbd "C-c e") 'mike-get-eshell)
 
 (when (try-require 'eshell-git)
   (setq eshell-prompt-function 'eshell-git/prompt-function))
