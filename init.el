@@ -160,7 +160,7 @@ Useful for graphical Emacs that may not pick up $PATH from user's bashrc."
   :type '(set string))
 
 (defcustom mike-plugins-dir
-  (file-name-as-directory (expand-file-name "plugins" user-emacs-directory))
+  (file-name-as-directory (expand-file-name "site-lisp" user-emacs-directory))
   "Plugins directory. Defaults to `user-emacs-directory'/plugins/."
   :type 'string)
 
@@ -302,11 +302,9 @@ From URL `http://www.mygooglest.com/fni/dot-emacs.html'."
   (condition-case err
       ;; protected form
       (progn
-        (message "Checking for library `%s'..." feature)
         (if (stringp feature)
             (load-library feature)
           (require feature))
-        (message "Checking for library `%s'... Found" feature)
         feature)
     ;; error handler
     (file-error  ; condition
@@ -635,39 +633,53 @@ Default is true."
 
 ;; * ELISP
 
-;; Elisp go-to-definition with M-. and back again with M-,
-(autoload 'elisp-slime-nav-mode "elisp-slime-nav")
-(add-hook 'emacs-lisp-mode-hook (lambda () (elisp-slime-nav-mode t)))
 (defun mike-after-elisp-load ()
   (diminish 'elisp-slime-nav-mode))
-(eval-after-load 'elisp-slime-nav '(mike-after-elisp-load))
+
+(defun mike-init-elisp ()
+  ;; Elisp go-to-definition with M-. and back again with M-,
+  (autoload 'elisp-slime-nav-mode "elisp-slime-nav")
+  (add-hook 'emacs-lisp-mode-hook (lambda () (elisp-slime-nav-mode t)))
+  (eval-after-load "elisp-slime-nav" '(mike-after-elisp-load)))
+
+(add-hook 'after-init-hook 'mike-init-elisp)
 
 
 ;; ** IELM
 
-;; Add paredit-mode to IELM
-(when (and (try-require 'ielm)
-           (try-require 'paredit))
+(defun mike-ielm-mode-hook ()
+  (autopair-mode 0)
+  (paredit-mode 1))
 
-  (defun mike-ielm-mode-hook ()
-    (autopair-mode 0)
-    (paredit-mode 1))
+(defun mike-init-ielm ()
+  ;; Add paredit-mode to IELM
+  (when (and (try-require 'ielm)
+             (try-require 'paredit))
 
-  (add-hook 'ielm-mode-hook 'mike-ielm-mode-hook))
+
+    (add-hook 'ielm-mode-hook 'mike-ielm-mode-hook)))
+
+(add-hook 'after-init-hook 'mike-init-ielm)
 
 
 ;; * JAVASCRIPT
 
-(try-require 'js)
+(defun mike-init-js ()
+  (try-require 'js))
+
+(add-hook 'after-init-hook 'mike-init-js)
 
 
 ;; * TERM
 
 ;; ** ANSI-TERM
-(when (try-require 'term)
 
-  (defun mike-visit-ansi-term ()
-    "If the current buffer is:
+(defcustom mike-term-shell "/bin/bash"
+  "Shell to run with `ansi-term', bash by default."
+  :type 'file)
+
+(defun mike-visit-ansi-term ()
+  "If the current buffer is:
 1) a running `ansi-term' named *ansi-term*, rename it.
 2) a stopped `ansi-term', kill it and create a new one.
 3) a non `ansi-term',
@@ -675,100 +687,106 @@ go to an already running `ansi-term' or start a new one
 while killing a defunct one.
 
 From URL `http://www.enigmacurry.com/2008/12/26/emacs-ansi-term-tricks/'."
-    (interactive)
-    (let ((is-term (string= "term-mode" major-mode))
-          (is-running (term-check-proc (buffer-name)))
-          (term-cmd "/bin/bash")
-          (anon-term (get-buffer "*ansi-term*")))
-      (if is-term
-          (if is-running
-              (if (string= "*ansi-term*" (buffer-name))
-                  (call-interactively 'rename-buffer)
-                (if anon-term
-                    (switch-to-buffer "*ansi-term*")
-                  (ansi-term term-cmd)))
-            (kill-buffer (buffer-name))
+  (interactive)
+  (let ((is-term (string= "term-mode" major-mode))
+        (is-running (term-check-proc (buffer-name)))
+        (term-cmd "/bin/bash")
+        (anon-term (get-buffer "*ansi-term*")))
+    (if is-term
+        (if is-running
+            (if (string= "*ansi-term*" (buffer-name))
+                (call-interactively 'rename-buffer)
+              (if anon-term
+                  (switch-to-buffer "*ansi-term*")
+                (ansi-term term-cmd)))
+          (kill-buffer (buffer-name))
+          (ansi-term term-cmd))
+      (if anon-term
+          (if (term-check-proc "*ansi-term*")
+              (switch-to-buffer "*ansi-term*")
+            (kill-buffer "*ansi-term*")
             (ansi-term term-cmd))
-        (if anon-term
-            (if (term-check-proc "*ansi-term*")
-                (switch-to-buffer "*ansi-term*")
-              (kill-buffer "*ansi-term*")
-              (ansi-term term-cmd))
-          (ansi-term term-cmd)))))
-  (global-set-key (kbd "<f2>") 'mike-visit-ansi-term)
-  (global-set-key (kbd "C-c t") 'mike-visit-ansi-term)
+        (ansi-term term-cmd)))))
 
-  (defvar mike-term-shell "/bin/bash")
-  (defadvice ansi-term (before force-bash)
-    (interactive (list mike-term-shell)))
-  (ad-activate 'ansi-term)
+(defun mike-term-use-utf8 ()
+  (set-buffer-process-coding-system 'utf-8-unix 'utf-8-unix))
 
-  (defun mike-term-use-utf8 ()
-    (set-buffer-process-coding-system 'utf-8-unix 'utf-8-unix))
-  (add-hook 'term-exec-hook 'mike-term-use-utf8)
+(defun mike-term-paste (&optional string)
+  (interactive)
+  (process-send-string
+   (get-buffer-process (current-buffer))
+   (if string string (current-kill 0))))
 
-  (defun mike-term-paste (&optional string)
-    (interactive)
-    (process-send-string
-     (get-buffer-process (current-buffer))
-     (if string string (current-kill 0))))
-  (defun mike-term-mode-hook ()
-    (goto-address-mode)
-    (define-key term-raw-map "\C-y" 'mike-term-paste)
-    (autopair-mode 0)
-    (setq show-trailing-whitespace nil))
-  (add-hook 'term-mode-hook 'mike-term-mode-hook))
+(defun mike-term-mode-hook ()
+  (goto-address-mode)
+  (define-key term-raw-map "\C-y" 'mike-term-paste)
+  (autopair-mode 0)
+  (setq show-trailing-whitespace nil))
+
+(defun mike-init-term ()
+  (when (try-require 'term)
+    (defadvice mike-ansi-term (before force-bash activate)
+      (interactive (list mike-term-shell)))
+    (add-hook 'term-exec-hook 'mike-term-use-utf8)
+    (add-hook 'term-mode-hook 'mike-term-mode-hook)))
+
+(add-hook 'after-init-hook 'mike-init-term)
 
 ;; ** MULTI-TERM
 
-(when (try-require 'multi-term)
-  (defvar mike-multi-term-program "/bin/bash"
-    "Shell to run with multi-term, bash by default.")
+(defcustom mike-multi-term-program "/bin/bash"
+  "Shell to run with `multi-term', bash by default."
+  :type 'file)
 
-  (defun mike-get-term ()
-    "Switch to the term buffer last used, or create a new one if
+(defun mike-get-term ()
+  "Switch to the term buffer last used, or create a new one if
 none exists, or if the current buffer is already a term.
 
 From URL `http://www.emacswiki.org/emacs/MultiTerm'."
-    (interactive)
-    (mike-get-mode-buffer 'term-mode 'multi-term))
+  (interactive)
+  (mike-get-mode-buffer 'term-mode 'multi-term))
 
-  (defun mike-term-send-escape ()
-    "Send <esc> in term mode."
-    (interactive)
-    (term-send-raw-string "\e"))
+(defun mike-term-send-escape ()
+  "Send <esc> in term mode."
+  (interactive)
+  (term-send-raw-string "\e"))
 
-  (defun mike-term-send-tab ()
-    "Send <tab> in term mode."
-    (interactive)
-    (term-send-raw-string "\t"))
+(defun mike-term-send-tab ()
+  "Send <tab> in term mode."
+  (interactive)
+  (term-send-raw-string "\t"))
 
-  (setq multi-term-program mike-multi-term-program)
-  (setq multi-term-switch-after-close t)
+(defun mike-init-multi-term ()
+  (when (try-require 'multi-term)
+    (setq multi-term-program mike-multi-term-program)
+    (setq multi-term-switch-after-close t)
 
-  (add-to-list 'term-bind-key-alist '("C-c C-e" . mike-term-send-escape))
-  (add-to-list 'term-bind-key-alist '("C-c C-j" . term-line-mode))
-  (add-to-list 'term-bind-key-alist '("C-c C-k" . term-char-mode))
-  (add-to-list 'term-bind-key-alist '("<tab>"   . mike-term-send-tab))
+    (add-to-list 'term-bind-key-alist '("C-c C-e" . mike-term-send-escape))
+    (add-to-list 'term-bind-key-alist '("C-c C-j" . term-line-mode))
+    (add-to-list 'term-bind-key-alist '("C-c C-k" . term-char-mode))
+    (add-to-list 'term-bind-key-alist '("<tab>"   . mike-term-send-tab))
 
-  (global-set-key (kbd "<f2>") 'mike-get-term)
-  (global-set-key (kbd "C-c t") 'mike-get-term))
+    (global-set-key (kbd "<f2>") 'mike-get-term)
+    (global-set-key (kbd "C-c t") 'mike-get-term)))
+
+(add-hook 'after-init-hook 'mike-init-multi-term)
 
 
 ;; * TEX
 
-;; Load auctex settings
-(when (and (featurep 'ns)
-           (try-require 'auctex-autoloads))
-  ;; Settings work on OS X; work on making these xplaf
-  (setq TeX-PDF-mode t
-        TeX-view-program-list '(("Open" "open \"%o\""))
-        TeX-view-program-selection '((output-pdf "Open"))))
+(defun mike-init-tex ()
+  (try-require 'auctex-autoloads)
+  ;; Load auctex settings
+  (when (featurep 'ns)
+    ;; Settings work on OS X; work on making these xplaf
+    (setq TeX-PDF-mode t
+          TeX-view-program-list '(("Open" "open \"%o\""))
+          TeX-view-program-selection '((output-pdf "Open")))))
+
+(add-hook 'after-init-hook 'mike-init-tex)
 
 
 ;; * SCHEME
-
-(try-require 'geiser-autoloads)
 
 ;; Geiser customizations (Scheme Slime-like environment)
 ;; Disable read-only prompt in Geiser.
@@ -788,6 +806,11 @@ From URL `http://www.emacswiki.org/emacs/MultiTerm'."
 
 (eval-after-load "geiser" '(mike-after-geiser-load))
 
+(defun mike-init-scheme ()
+  (try-require 'geiser-autoloads))
+
+(add-hook 'after-init-hook 'mike-init-scheme)
+
 
 ;; * SSH
 
@@ -796,7 +819,7 @@ From URL `http://www.emacswiki.org/emacs/MultiTerm'."
                             (getenv "HOSTNAME"))
                     (expand-file-name "local/bin" (getenv "HOME")))
   "The name of the file that contains environment info from grabssh."
-  :type '(string))
+  :type 'file)
 
 (defun fixssh ()
   "Fix SSH agent and X forwarding in GNU screen.
@@ -821,27 +844,13 @@ Requires grabssh to put SSH variables in the file identified by
 
 ;; eshell customizations
 
-(require 'eshell)
-(require 'em-hist)
-
 (defun mike-get-eshell ()
   (interactive)
-  (mike-get-mode-buffer 'eshell-mode (lambda () (eshell t))))
+  (mike-get-mode-buffer 'eshell-mode
+                        (lambda () (eshell t))))
 
-(global-set-key (kbd "C-c e") 'mike-get-eshell)
-
-(when (try-require 'eshell-git)
-  (setq eshell-prompt-function 'eshell-git/prompt-function))
-
-(setq eshell-history-size 1024
-      eshell-prompt-regexp "^[^#$]*[#$] "
-      eshell-save-history-on-exit t
-      eshell-highlight-prompt nil
-      eshell-git/prompt-face 'default
-      eshell-git/pwd-face 'default
-      eshell-git/branch-face 'default)
-
-(defun perldoc (man-args)
+(defun mike-perldoc (man-args)
+  "Perldoc to be called from eshell."
   (interactive "sPerldoc: ")
   (require 'man)
   (let ((manual-program "perldoc"))
@@ -852,62 +861,98 @@ Requires grabssh to put SSH variables in the file identified by
   (if (member (car args) '("-l" "-h"))
       (eshell-wait-for-process
        (eshell-external-command "perldoc" args))
-    (funcall 'perldoc (apply 'eshell-flatten-and-stringify args))))
-
-(eshell-find-interpreter "perldoc")
+    (funcall 'mike-perldoc (apply 'eshell-flatten-and-stringify args))))
 
 (defun mike-eshell-mode-hook ()
   (setq show-trailing-whitespace nil))
 
-(add-hook 'eshell-mode-hook 'mike-eshell-mode-hook)
+(defun mike-init-eshell ()
+  (try-require 'eshell)
+  (try-require 'em-hist)
+
+  ;; custom be damned, these are opinionated
+  (setq eshell-history-size 1024
+        eshell-prompt-regexp "^[^#$]*[#$] "
+        eshell-save-history-on-exit t
+        eshell-highlight-prompt nil
+        eshell-git/prompt-face 'default
+        eshell-git/pwd-face 'default
+        eshell-git/branch-face 'default)
+
+  (global-set-key (kbd "C-c e") 'mike-get-eshell)
+
+  (when (try-require 'eshell-git)
+    (setq eshell-prompt-function 'eshell-git/prompt-function))
+
+  (add-hook 'eshell-mode-hook 'mike-eshell-mode-hook))
+
+(add-hook 'after-init-hook 'mike-init-eshell)
 
 
 ;; * PYTHON
 
-(add-hook 'python-mode-hook 'autopair-mode)
-(add-hook 'python-mode-hook '(lambda () (require 'virtualenv)))
-;; (defun workon-postactivate (virtualenv)
-;;   (require 'virtualenv)
-;;   (virtualenv-workon virtualenv)
-;;   (desktop-change-dir virtualenv))
+(defun mike-init-python ()
+  (when (try-require 'python)
+    (add-hook 'python-mode-hook 'autopair-mode)
+    (try-require 'virtualenv)))
+
+(add-hook 'after-init-hook 'mike-init-python)
 
 
 ;; * HASKELL
 
-(unless (try-require 'haskell-mode-autoloads)
-  (try-require 'haskell-mode))
-(eval-after-load "haskell-mode"
-  '(progn
-     (add-hook 'haskell-mode-hook 'turn-on-haskell-indentation)))
+(defun mike-init-haskell ()
+  (unless (try-require 'haskell-mode-autoloads)
+    (try-require 'haskell-mode))
+  (eval-after-load "haskell-mode"
+    '(progn
+       (add-hook 'haskell-mode-hook 'turn-on-haskell-indentation))))
+
+(add-hook 'after-init-hook 'mike-init-haskell)
 
 
 ;; * THEME
 
-(when (not (custom-theme-enabled-p 'solarized-light))
-  (load-theme 'solarized-light t))
+(defcustom mike-theme 'solarized-light
+  "Theme to load on startup."
+  :type 'symbol)
+
+(defun mike-load-theme ()
+  (when (not (custom-theme-enabled-p mike-theme))
+    (load-theme mike-theme t)))
+
+(add-hook 'after-init-hook 'mike-load-theme)
 
 
 ;; * EMACS SERVER
 
-(defvar mike-server-start t
-  "Start server after initialization.  Default is true.")
+(defcustom mike-server-start t
+  "Start server after initialization.  Default is true."
+  :type 'boolean)
 
-;; Start Emacs server.
-(require 'server)
-(when (and mike-server-start (not (server-running-p)))
-  (server-start))
+(defun mike-start-server-after-init ()
+  (require 'server)
+  (when (and mike-server-start (not (server-running-p)))
+    (server-start)))
 
+(add-hook 'after-init-hook 'mike-start-server-after-init)
 
 ;; * FINISH
 
 ;; Diminish modeline clutter
-(when (try-require 'diminish)
+(defun mike-diminish-mode-line ()
+  (require 'diminish)
   (diminish 'yas-minor-mode))
+(add-hook 'after-init-hook 'mike-diminish-mode-line)
+
+(defun mike-load-after-init ()
+  (let ((after-file (expand-file-name "after-init.el" user-emacs-directory)))
+    (when (file-exists-p after-file)
+      (load-file after-file))))
+
+(add-hook 'after-init-hook 'mike-load-after-init t)
 
 ;; Final machine-specific settings.
-(let ((after-file (expand-file-name "after-init.el" user-emacs-directory)))
-  (when (file-exists-p after-file)
-    (load-file after-file)))
 
 ;; Time Emacs startup complete.
 (message "Emacs startup in %ds"
