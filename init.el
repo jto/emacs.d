@@ -2,12 +2,12 @@
 
 ;; * STARTUP
 
+(require 'cl)
+
 (defvar mike-emacs-load-start-time (current-time)
   "The time at which Emacs was started.
 
 See URL `http://a-nickels-worth.blogspot.com/2007/11/effective-emacs.html'.")
-
-(require 'cl)
 
 ;; Use before-init.el to set variables to override defaults.
 (let ((before-file (expand-file-name "before-init.el" user-emacs-directory)))
@@ -42,7 +42,6 @@ returned by `user-login-name'."
   "Full name of current user. Default is the value returned by
 `user-full-name'."
   :type 'string)
-
 
 ;; ** CUSTOM FILE
 
@@ -471,15 +470,17 @@ Don't mess with special buffers."
 
 ;; * ANSI-COLOR
 
-(require 'ansi-color)
+(defun mike-init-ansi-color ()
+  (when (try-require 'ansi-color)
+    (defadvice mike-display-message-or-buffer (before ansi-color activate)
+      "Process ANSI color codes in shell output."
+      (let ((buf (ad-get-arg 0)))
+        (and (bufferp buf)
+             (string= (buffer-name buf) "*Shell Command Output*")
+             (with-current-buffer buf
+               (ansi-color-apply-on-region (point-min) (point-max))))))))
 
-(defadvice display-message-or-buffer (before ansi-color activate)
-  "Process ANSI color codes in shell output."
-  (let ((buf (ad-get-arg 0)))
-    (and (bufferp buf)
-         (string= (buffer-name buf) "*Shell Command Output*")
-         (with-current-buffer buf
-           (ansi-color-apply-on-region (point-min) (point-max))))))
+(add-hook 'after-init-hook 'mike-init-ansi-color)
 
 
 ;; * ORG-MODE
@@ -494,42 +495,45 @@ Don't mess with special buffers."
 Default is true."
   :type 'boolean)
 
-(try-require 'org-autoloads)
-(try-require 'org-mobile)
+(defun mike-org-mode-hook ()
+  ;; Redefine arrow keys, since promoting/demoting and moving
+  ;; subtrees up and down are less frequent tasks then
+  ;; navigation and visibility cycling
+  (org-defkey org-mode-map
+              (kbd "M-<left>") 'outline-hide-more)
+  (org-defkey org-mode-map
+              (kbd "M-<right>") 'outline-show-more)
+  (org-defkey org-mode-map
+              (kbd "M-<up>") 'outline-previous-visible-heading)
+  (org-defkey org-mode-map
+              (kbd "M-<down>") 'outline-next-visible-heading))
 
-;; Org-mode and mobile-org customizations
-;; set org-mobile-encryption-password in custom
-(when mike-org-use-dropbox
-  (setq org-directory (expand-file-name "org" mike-dropbox-dir))
-  (setq org-agenda-file (expand-file-name "agendafiles.txt" org-directory))
-  (setq org-mobile-directory (expand-file-name "MobileOrg" mike-dropbox-dir))
-  (setq org-mobile-inbox-for-pull (expand-file-name "flagged.org" org-directory)))
+(defun mike-init-org ()
+  (try-require 'org-autoloads)
+  (try-require 'org-mobile)
 
-;; ** Setup Outshine
+  ;; Org-mode and mobile-org customizations
+  ;; set org-mobile-encryption-password in custom
+  (when mike-org-use-dropbox
+    (setq org-directory (expand-file-name "org" mike-dropbox-dir))
+    (setq org-agenda-file (expand-file-name "agendafiles.txt" org-directory))
+    (setq org-mobile-directory
+          (expand-file-name "MobileOrg" mike-dropbox-dir))
+    (setq org-mobile-inbox-for-pull
+          (expand-file-name "flagged.org" org-directory)))
 
-(when (try-require 'outshine)
-  (require 'outline)
-  (add-hook 'outline-minor-mode-hook 'outshine-hook-function)
-  (add-hook 'org-mode-hook
-            (lambda ()
-              ;; Redefine arrow keys, since promoting/demoting and moving
-              ;; subtrees up and down are less frequent tasks then
-              ;; navigation and visibility cycling
-              (org-defkey org-mode-map
-                          (kbd "M-<left>") 'outline-hide-more)
-              (org-defkey org-mode-map
-                          (kbd "M-<right>") 'outline-show-more)
-              (org-defkey org-mode-map
-                          (kbd "M-<up>") 'outline-previous-visible-heading)
-              (org-defkey org-mode-map
-                          (kbd "M-<down>") 'outline-next-visible-heading))
-            'append)
-  (add-hook 'emacs-lisp-mode-hook 'outline-minor-mode)
-  (add-hook 'sh-mode-hook 'outline-minor-mode)
+  (add-hook 'org-mode-hook 'mike-org-mode-hook 'append)
 
-  (define-key outline-minor-mode-map (kbd "<tab>") nil)
-  (define-key outline-minor-mode-map
-    (kbd "C-c C-o") 'outline-toggle-children))
+  (when (try-require 'outline)
+    (add-hook 'emacs-lisp-mode-hook 'outline-minor-mode)
+    (add-hook 'sh-mode-hook 'outline-minor-mode)
+    (define-key outline-minor-mode-map (kbd "<tab>") nil)
+    (define-key outline-minor-mode-map
+      (kbd "C-c C-o") 'outline-toggle-children))
+  (when (try-require 'outshine)
+    (add-hook 'outline-minor-mode-hook 'outshine-hook-function)))
+
+(add-hook 'after-init-hook 'mike-init-org)
 
 
 ;; * PERL
@@ -561,23 +565,37 @@ Default is true."
 
 ;; * SCALA
 
-(try-require 'scala-mode2-autoloads)
 (add-to-list 'auto-mode-alist '("\\.sbt\\'" . scala-mode))
+
 (defun mike-after-scala-load ()
   (when (try-require 'ensime)
     (add-hook 'scala-mode-hook 'ensime-scala-mode-hook)))
+
 (eval-after-load "scala-mode2" '(mike-after-scala-load))
+
+(defun mike-init-scala ()
+  (try-require 'scala-mode2-autoloads))
+
+(add-hook 'after-init-hook 'mike-init-scala)
 
 
 ;; * YAML
 
 (add-to-list 'auto-mode-alist '("\\.cfg\\'" . yaml-mode))
-(try-require 'yaml-mode-autoloads)
+
+(defun mike-init-yaml ()
+  (try-require 'yaml-mode-autoloads))
+
+(add-hook 'after-init-hook 'mike-init-yaml)
 
 
 ;; * GRAPHVIZ DOT
 
-(try-require 'graphviz-dot-mode-autoloads)
+(defun mike-init-graphviz ()
+  (try-require 'graphviz-dot-mode-autoloads))
+
+(add-hook 'after-init-hook 'mike-init-graphviz)
+
 (add-to-list 'auto-mode-alist '("\\.gv\\'" . graphviz-dot-mode))
 
 ;; Graphviz customizations
@@ -585,18 +603,15 @@ Default is true."
   (setq graphviz-dot-auto-indent-on-braces nil)
   (setq graphviz-dot-auto-indent-on-semi nil)
   (setq graphviz-dot-indent-width 4))
+
 (eval-after-load "graphviz-dot-mode" '(mike-after-graphviz-load))
 
 
 ;; * SQL
 
-(require 'sql)
-
-;;; Make _ part of a word
-(modify-syntax-entry ?_ "w" sql-mode-syntax-table)
-
 (defcustom mike-sql-upcase-keywords t
-  "If non-nil will convert keywords to upper case in `mike-sql-electric-space'.")
+  "If non-nil will convert keywords to upper case in `mike-sql-electric-space'."
+  :type 'boolean)
 
 (defconst mike-sql-keywords
   (map 'list 'symbol-name
@@ -619,10 +634,17 @@ Default is true."
   (mike-sql-upcase-keyword)
   (insert-char (string-to-char " ") (or n 1)))
 
-(define-key sql-mode-map (kbd "SPC") 'mike-sql-electric-space)
-(define-key sql-interactive-mode-map (kbd "SPC") 'mike-sql-electric-space)
+(defun mike-init-sql ()
+  (when (try-require 'sql)
+    ;; Make _ part of a word
+    (modify-syntax-entry ?_ "w" sql-mode-syntax-table)
 
-(add-hook 'sql-interactive-mode-hook 'mike-sql-interactive-mode-hook)
+    (define-key sql-mode-map (kbd "SPC") 'mike-sql-electric-space)
+    (define-key sql-interactive-mode-map (kbd "SPC") 'mike-sql-electric-space)
+
+    (add-hook 'sql-interactive-mode-hook 'mike-sql-interactive-mode-hook)))
+
+(add-hook 'after-init-hook 'mike-init-sql)
 
 ;; ** MySQL
 
@@ -950,7 +972,7 @@ Requires grabssh to put SSH variables in the file identified by
     (when (file-exists-p after-file)
       (load-file after-file))))
 
-(add-hook 'after-init-hook 'mike-load-after-init t)
+(add-hook 'after-init-hook 'mike-load-after-init 'append)
 
 ;; Final machine-specific settings.
 
