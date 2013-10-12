@@ -212,27 +212,23 @@ Update `load-path' with `mike-plugins-dir'."
 
 ;; ** SETUP
 
+(defcustom mike-exclude-packages '()
+  "Packages to exclude from this Emacs instance."
+  :type '(set symbol))
+
+(defcustom mike-package-packages '()
+  "A list of packages to ensure are installed in Emacs."
+  :type '(list symbol))
+
+(defvar mike-missing-packages '()
+  "A list of missing packages set by `try-require'.")
+
 ;; Add package repositories.
 (add-to-list 'package-archives
              '("marmalade" . "http://marmalade-repo.org/packages/") t)
 (add-to-list 'package-archives
              '("melpa" . "http://melpa.milkbox.net/packages/") t)
 
-;; Initialize package.
-(package-initialize)
-
-;; Create a list of packages to install if not present.
-(when (not package-archive-contents)
-  (package-refresh-contents))
-
-;; ** VARIABLE DEFINITIONS
-
-(defcustom mike-exclude-packages '()
-  "Packages to exclude from this Emacs instance."
-  :type '(set symbol))
-
-(defvar mike-package-packages '()
-  "A list of packages to ensure are installed in Emacs.")
 (dolist (p '(starter-kit
              starter-kit-lisp
              starter-kit-bindings
@@ -260,9 +256,6 @@ Update `load-path' with `mike-plugins-dir'."
              multi-term))
   (pushnew p mike-package-packages))
 
-(defvar mike-missing-packages '()
-  "A list of missing packages set by `try-require'.")
-
 ;; ** FUNCTIONS
 
 (defun mike-package-to-install-p (pkg)
@@ -284,6 +277,7 @@ Update `load-path' with `mike-plugins-dir'."
   "Install uninstalled packages in `mike-package-packages'.
 Won't install packages in `mike-exclude-packages'."
   (interactive)
+  (package-refresh-contents)
   (dolist (pkg mike-package-packages)
     (when (mike-package-to-install-p pkg)
       (condition-case-unless-debug err
@@ -312,7 +306,13 @@ From URL `http://www.mygooglest.com/fni/dot-emacs.html'."
        (add-to-list 'mike-missing-packages feature 'append))
      nil)))
 
-(mike-install-packages)
+;; Initialize package.
+(package-initialize)
+
+;; Install packages on a new installation if not present.
+(when (not package-archive-contents)
+  (mike-install-packages))
+
 
 ;; ** EXEC-PATH-FROM-SHELL
 
