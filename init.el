@@ -621,6 +621,11 @@ Default is true."
                   delete  update ))
   "Keywords to upcase")
 
+(defun mike-toggle-sql-upcase-keywords ()
+  "Toggle whether to automatically upcase keywords in `sql-mode'."
+  (interactive)
+  (setq mike-sql-upcase-keywords (not mike-sql-upcase-keywords)))
+
 (defun mike-sql-interactive-mode-hook ()
   (setq show-trailing-whitespace nil))
 
