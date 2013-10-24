@@ -12,58 +12,39 @@ package ${1:`(mapconcat 'identity
              "/")
            "::")`};
 
-###########
 # * Imports
-###########
 
-use Carp;
-use Readonly;
+use strict;
+use warnings;
+use utf8;
 
-#########
 # * Setup
-#########
 
 use Moose;
 
-####################
 # * Class attributes
-####################
 
 $0
 
-############
 # * Builders
-############
 
-#################
 # * Class methods
-#################
 
-###################
 # * Private methods
-###################
 
-###########
 # * Cleanup
-###########
 
 __PACKAGE__->meta->make_immutable;
 no Moose;
 1;
 
-###########
 # * Perldoc
-###########
 
 __END__
 
 =head1 NAME
 
-$1 - ${3:A short description of the module's purpose}
-
-=head1 VERSION
-
-This documentation refers to L<$1>, currently in development.
+$1 - ${2:A short description of the module's purpose}
 
 =head1 SYNOPSIS
 
@@ -86,12 +67,12 @@ This module has no known incompatibilities.
 =head1 BUGS AND LIMITATIONS
 
 There are no known bugs in this module. Please report problems to
-${4:`mike-name`} <L<${5:`mike-email`}|mailto:$5>>. Patches are
+${3:`mike-name`} <L<${4:`mike-email`}|mailto:$4>>. Patches are
 welcome.
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright `(format-time-string "%Y")` $4.
+Copyright `(format-time-string "%Y")` $3.
 
 This is free software; you can redistribute it and/or modify it under
 the same terms as the Perl 5 programming language system itself.
