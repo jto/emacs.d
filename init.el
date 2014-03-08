@@ -139,6 +139,14 @@ Create with creation function F."
             (pop-to-buffer b 'display-buffer-reuse-window)
           (switch-to-buffer b))))))
 
+(defun mike-unfill-region (beg end)
+  "Unfill the region, joining text paragraphs into a single
+  logical line.  This is useful, e.g., for use with
+  `visual-line-mode'."
+  (interactive "*r")
+  (let ((fill-column (point-max)))
+    (fill-region beg end)))
+
 
 ;; * PATH
 
