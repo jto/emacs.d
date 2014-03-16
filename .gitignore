@@ -16,3 +16,6 @@ customize-melpa.el
 snippets/cperl-mode/.yas-compiled-snippets.el
 before-init.el
 after-init.el
+*.dat
+undohist/
+*.eld
