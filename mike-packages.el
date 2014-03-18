@@ -66,11 +66,12 @@ Exclude packages by setting mike-exclude-packages in before-init.el"
                projectile
                dired-details
                smart-mode-line
-               undohist
+               undo-tree
                auto-complete
                multiple-cursors
                multi-term
                smartparens
+               ack-and-a-half
                ))
     (pushnew p mike-package-packages)))
 
