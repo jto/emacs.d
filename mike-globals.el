@@ -35,6 +35,7 @@
   (try-require 'flx-ido)
   (try-require 'bookmark+)
   (try-require 'prelude-lite)
+  (try-require 'ack-and-a-half)
 
   (when (try-require 'smart-mode-line)
     (setq sml/theme 'dark)
