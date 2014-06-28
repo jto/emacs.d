@@ -15,13 +15,14 @@ See URL `http://a-nickels-worth.blogspot.com/2007/11/effective-emacs.html'.")
     (load-file before-file)))
 
 
-(pushnew user-emacs-directory load-path)
+(pushnew (expand-file-name "site-lisp" user-emacs-directory) load-path)
 
 
 ;; * PACKAGES
 
 (require 'mikemacs)
-(mikemacs-init)
+;; Init mikemacs after Emacs loads.
+(add-hook 'after-init-hook 'mike-init 'append)
 
 
 ;; * FINISH

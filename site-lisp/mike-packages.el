@@ -10,16 +10,13 @@
 
 (defcustom mike-exclude-packages '()
   "Packages to exclude from this Emacs instance."
-  :type '(set symbol)
+  :type '(repeat symbol)
   :group 'mikemacs)
 
 (defcustom mike-package-packages '()
   "A list of packages to ensure are installed in Emacs."
-  :type '(list symbol)
+  :type '(repeat symbol)
   :group 'mikemacs)
-
-(defvar mike-missing-packages '()
-  "A list of missing packages set by `try-require'.")
 
 ;; Add package repositories.
 (defun mike-init-package-repositories ()
@@ -74,61 +71,6 @@ Exclude packages by setting mike-exclude-packages in before-init.el"
                ack-and-a-half
                ))
     (pushnew p mike-package-packages)))
-
-;; ** FUNCTIONS
-
-(defun try-require (feature)
-  "Attempt to load a library or module named FEATURE.
-
-Return true if the library given as argument is successfully
-loaded. If not, instead of an error, just add the package to a
-list of missing packages.
-
-From URL `http://www.mygooglest.com/fni/dot-emacs.html'."
-  (condition-case err
-      ;; protected form
-      (progn
-        (if (stringp feature)
-            (load-library feature)
-          (require feature))
-        feature)
-    ;; error handler
-    (file-error  ; condition
-     (progn
-       (message "Checking for library `%s'... Missing" feature)
-       (add-to-list 'mike-missing-packages feature 'append))
-     nil)))
-
-(defun mike-package-to-install-p (pkg)
-  "True if P should be installed and is not."
-  (not (or (package-installed-p pkg)
-           (member pkg mike-exclude-packages))))
-
-(defun mike-all-packages-installed-p ()
-  "Return t if all packages to install are installed, nil otherwise."
-  (loop for pkg in mike-package-packages
-        when (mike-package-to-install-p pkg) do (return nil)
-        finally (return t)))
-
-(defun mike-check-packages ()
-  "Check for uninstalled packages."
-  (interactive)
-  (message
-   (if (mike-all-packages-installed-p)
-       "All packages installed."
-     "Uninstalled packages. Run `mike-install-packages' to install.")))
-
-(defun mike-install-packages ()
-  "Install uninstalled packages in `mike-package-packages'.
-Won't install packages in `mike-exclude-packages'."
-  (interactive)
-  (package-refresh-contents)
-  (mike-init-package-list)
-  (dolist (pkg mike-package-packages)
-    (when (mike-package-to-install-p pkg)
-      (condition-case-unless-debug err
-          (package-install pkg)
-        (error (message "%s" (error-message-string err)))))))
 
 (defun mike-init-packages ()
   (package-initialize)
