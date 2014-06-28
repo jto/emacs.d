@@ -21,18 +21,13 @@ See URL `http://a-nickels-worth.blogspot.com/2007/11/effective-emacs.html'.")
 ;; * PACKAGES
 
 (require 'mikemacs)
-;; Init mikemacs after Emacs loads.
-(add-hook 'after-init-hook 'mike-init 'append)
 
 
 ;; * FINISH
 
-(defun mike-load-after-init ()
-  (let ((after-file (expand-file-name "after-init.el" user-emacs-directory)))
-    (when (file-exists-p after-file)
-      (load-file after-file))))
-
-(add-hook 'after-init-hook 'mike-load-after-init 'append)
+(let ((after-file (expand-file-name "after-init.el" user-emacs-directory)))
+  (when (file-exists-p after-file)
+    (load-file after-file)))
 
 ;; Final machine-specific settings.
 

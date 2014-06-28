@@ -1,7 +1,8 @@
 (require 'custom)
 (require 'package)
+(require 'prelude-lite)
 
-;; * CUSTOM DEFINITIONS
+;; CUSTOM DEFINITIONS
 
 (defgroup mikemacs nil
   "Mikemacs: Opinionated defaults for Mike's Emacs happiness.
@@ -17,7 +18,15 @@ Customize these options as desired.")
     yasnippet
     magit
     autopair
-    autocomplete)
+    auto-complete
+    undo-tree
+    smartparens
+    projectile
+    flx-ido
+    ido-vertical-mode
+    paredit
+    diminish
+    exec-path-from-shell)
   "A list of packages to ensure are installed in Emacs."
   :type '(repeat symbol))
 
@@ -48,7 +57,7 @@ Useful for graphical Emacs that may not pick up $PATH from user's bashrc."
   :group 'mikemacs)
 
 
-;; * FUNCTIONS
+;; PACKAGES
 
 (defvar mike-missing-packages '()
   "A list of missing packages set by `try-require'.")
@@ -76,9 +85,8 @@ From URL `http://www.mygooglest.com/fni/dot-emacs.html'."
      nil)))
 
 (defun mike-package-to-install-p (pkg)
-  "True if P should be installed and is not."
-  (not (or (package-installed-p pkg)
-           (member pkg mike-exclude-packages))))
+  "True if PKG should be installed and is not."
+  (not (package-installed-p pkg)))
 
 (defun mike-all-packages-installed-p ()
   "Return t if all packages to install are installed, nil otherwise."
@@ -106,38 +114,8 @@ From URL `http://www.mygooglest.com/fni/dot-emacs.html'."
           (package-install pkg)
         (error (message "%s" (error-message-string err)))))))
 
-;; Separate custom file.
-(defun mike-load-custom ()
-  "Load customizations from emacs-custom.el except on Aquamacs."
-  (when (not (featurep 'aquamacs))
-    (setq custom-file (expand-file-name "emacs-custom.el"
-                                        user-emacs-directory))
-    (load custom-file 'noerror)))
 
-(defun mike-setup-global-keys ()
-  "Initialize global keys"
-  (global-set-key (kbd "M-o" 'other-window))
-  (global-set-key (kbd "C-c g" 'magit-status)))
-
-(defun mike-load-packages ()
-  "Load mikemacs packages."
-  (dolist (p mike-packages)
-    (let ((pkg           (if (consp p) (car p) p))
-          (init-function (if (consp p) (cdr p) nil)))
-      (require pkg)
-      (when init-function (funcall init-function)))))
-
-(defun mike-init ()
-  "Load customizations, load mikemacs packages and setup global modes and keybindings."
-  (mike-load-custom)
-  (mike-load-packages)
-  (mike-setup-global-keys)
-  (mike-init-globals)
-  (unless (mike-all-packages-installed-p)
-    (message "Package(s) missing, run M-x mike-install-packages to install.")))
-
-
-;; * BUFFER UTILS
+;; BUFFER UTILS
 
 (defun mike-narrow-to-region-indirect (start end)
   "Restrict editing in this buffer to the current region, indirectly."
@@ -216,7 +194,7 @@ Create with creation function F."
     (fill-region beg end)))
 
 
-;; * PATH
+;; PATH
 
 (defun mike-add-to-path (dirname)
   "Prepend DIRNAME to $PATH.
@@ -259,91 +237,98 @@ Update `load-path' with `mike-plugins-dir'."
   ;; plugins
   (mike-update-plugins))
 
-(defun mike-init-paths ()
+
+;; ** IELM
+
+(defun mike-ielm-mode-hook ()
+  (autopair-mode 0)
+  (paredit-mode 1))
+
+
+(defun mike-init ()
+  "Initialize opinionated mikemacs defaults.
+
+Load customizations, load mikemacs packages and setup global modes and keybindings."
+
+  ;; Load customizations from emacs-custom.el except on Aquamacs.
+  (when (not (featurep 'aquamacs))
+    (setq custom-file (expand-file-name "emacs-custom.el"
+                                        user-emacs-directory))
+    (load custom-file 'noerror))
+
+  ;; Load core packages. Bootstrap if packages aren't found.
+  (package-initialize)
+  (unless (mike-all-packages-installed-p)
+    (mike-install-packages))
+  (dolist (pkg mike-packages)
+    (require pkg))
+
+  ;; Initialize global keys
+  (global-set-key (kbd "M-o") 'other-window)
+  (global-set-key (kbd "C-c g") 'magit-status)
+
+  ;; Update paths and exec path
   (mike-update-paths)
-  (when (and (memq window-system '(mac ns))
-             (try-require 'exec-path-from-shell))
-    (exec-path-from-shell-initialize)))
+  (when (memq window-system '(mac ns))
+    (require 'exec-path-from-shell)
+    (exec-path-from-shell-initialize))
 
-
-;; * GLOBAL SETTINGS
-
-(defun mike-init-backups ()
-  "Initialize backup directory and temporary files"
+  ;; Backup settings
   (make-directory mike-backup-dir t)
   (setq backup-directory-alist `(("." . ,mike-backup-dir))
         auto-save-file-name-transforms `((".*" ,mike-backup-dir t))
         vc-make-backup-files t
-        comment-auto-fill-only-comments t))
+        comment-auto-fill-only-comments t)
 
-(defun mike-init-global-settings ()
-  (mike-init-backups)
+  ;; Basic global settings
   (setq-default show-trailing-whitespace t
-                column-number-mode t))
+                column-number-mode t)
 
-(defun mike-init-global-modes ()
   ;; smart indentation
   (electric-indent-mode 1)
 
-  (try-require 'diminish)
-  (try-require 'uniquify)
-  (try-require 'auto-rsync)
-  (try-require 'flx-ido)
-  (try-require 'bookmark+)
-  (try-require 'prelude-lite)
-  (try-require 'ack-and-a-half)
+  ;; undo-tree
+  (global-undo-tree-mode)
+  (diminish 'undo-tree-mode)
 
-  (when (try-require 'smart-mode-line)
-    (setq sml/theme 'dark)
-    (sml/setup))
+  ;; yasnippet
+  (define-key yas-minor-mode-map (kbd "TAB") nil)
+  (define-key yas-minor-mode-map (kbd "C-o") 'yas-expand-from-trigger-key)
+  (yas-global-mode 1)
+  (diminish 'yas-minor-mode)
 
-  (when (try-require 'undo-tree)
-    (global-undo-tree-mode)
-    (when (try-require 'diminish)
-      (diminish 'undo-tree-mode)))
+  ;; recent files
+  (recentf-mode)
 
-  (when (try-require 'yasnippet)
-    (define-key yas-minor-mode-map (kbd "TAB") nil)
-    (define-key yas-minor-mode-map (kbd "C-o") 'yas-expand-from-trigger-key)
-    (yas-global-mode 1)
-    (when (try-require 'diminish)
-      (diminish 'yas-minor-mode)))
+  ;; autopair
+  (autopair-global-mode)
+  (diminish 'autopair-mode)
 
-  ;; Recent files
-  (when (try-require 'recentf)
-    (recentf-mode))
+  ;; ido and vertical
+  (ido-mode 1)
+  (ido-vertical-mode)
 
-  (when (try-require 'autopair)
-    (autopair-global-mode)
-    (diminish 'autopair-mode))
+  ;; projectile
+  (projectile-global-mode)
+  (diminish 'projectile-mode)
 
-  (when (try-require 'ido-vertical-mode)
-    (ido-mode 1)
-    (ido-vertical-mode))
+  ;; auto-complete
+  (global-auto-complete-mode)
+  (diminish 'auto-complete-mode)
 
-  (when (try-require 'projectile)
-    (projectile-global-mode)
-    (diminish 'projectile-mode))
+  ;; smartparens
+  (show-smartparens-global-mode 1)
 
-  (when (try-require 'undohist)
-    (undohist-initialize))
-
-  (when (try-require 'auto-complete)
-    (global-auto-complete-mode)
-    (diminish 'auto-complete-mode))
-
-  (when (try-require 'smartparens)
-    (show-smartparens-global-mode 1)))
-
-(defun mike-init-globals ()
-  (mike-init-global-settings)
-  (mike-init-global-modes)
   ;; Remove auto-fill from text-mode added by emacs-starter-kit
   (when (member #'turn-on-auto-fill text-mode-hook)
     (remove-hook 'text-mode-hook #'turn-on-auto-fill))
   ;; I like the menu bar, disabled in starter-kit
   (when window-system
-    (menu-bar-mode)))
+    (menu-bar-mode))
 
+  ;; Add paredit-mode to IELM
+  (add-hook 'ielm-mode-hook 'mike-ielm-mode-hook))
+
+(mike-init)
 
 (provide 'mikemacs)
