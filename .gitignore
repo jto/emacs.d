@@ -19,3 +19,4 @@ after-init.el
 *.dat
 undohist/
 *.eld
+themes/
