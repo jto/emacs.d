@@ -143,8 +143,6 @@ From URL `http://www.mygooglest.com/fni/dot-emacs.html'."
     (untabify (point-min) (point-max))
     (delete-trailing-whitespace (point-min) (point-max))))
 
-(global-set-key (kbd "C-c .") 'mike-clean-buffer)
-
 (defun mike-rename-buffer-file ()
   "Renames current buffer and file it is visiting.
 
