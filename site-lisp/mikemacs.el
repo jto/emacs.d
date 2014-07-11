@@ -286,6 +286,9 @@ Load customizations, load mikemacs packages and setup global modes and keybindin
   ;; smart indentation
   (electric-indent-mode 1)
 
+  ;; line numbers
+  (global-linum-mode 1)
+
   ;; undo-tree
   (global-undo-tree-mode)
   (diminish 'undo-tree-mode)
