@@ -162,8 +162,6 @@ From URL `http://whattheemacsd.com/'."
           (message "File '%s' successfully renamed to '%s'"
                    name (file-name-nondirectory new-name)))))))
 
-(global-set-key (kbd "C-x C-r") 'mike-rename-buffer-file)
-
 (defun mike-last-mode-buffer (mode l)
   "Get latest buffer with major-mode MODE in buffer list L."
   (when l
