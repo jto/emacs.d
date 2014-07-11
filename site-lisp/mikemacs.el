@@ -45,7 +45,7 @@ Useful for graphical Emacs that may not pick up $PATH from user's bashrc."
   :group 'mikemacs)
 
 (defcustom mike-plugins-dir
-  (file-name-as-directory (expand-file-name "site-lisp" user-emacs-directory))
+  (file-name-as-directory (expand-file-name "plugins" user-emacs-directory))
   "Plugins directory. Defaults to `user-emacs-directory'/plugins/."
   :type 'string
   :group 'mikemacs)
