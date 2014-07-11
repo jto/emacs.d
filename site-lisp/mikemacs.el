@@ -86,7 +86,7 @@ From URL `http://www.mygooglest.com/fni/dot-emacs.html'."
 
 (defun mike-package-to-install-p (pkg)
   "True if PKG should be installed and is not."
-  (not (package-installed-p pkg)))
+  (not (locate-library (if (symbolp pkg) (symbol-name pkg) pkg))))
 
 (defun mike-all-packages-installed-p ()
   "Return t if all packages to install are installed, nil otherwise."
