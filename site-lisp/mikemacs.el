@@ -234,12 +234,15 @@ Update `load-path' with `mike-plugins-dir'."
   (mike-update-plugins))
 
 
-;; ** IELM
+;; ** Emacs Lisp
 
 (defun mike-ielm-mode-hook ()
   (autopair-mode 0)
   (paredit-mode 1))
 
+(defun mike-emacs-lisp-mode-hook ()
+  (autopair-mode 0)
+  (paredit-mode 1))
 
 (defun mike-init ()
   "Initialize opinionated mikemacs defaults.
@@ -323,7 +326,8 @@ Load customizations, load mikemacs packages and setup global modes and keybindin
     (menu-bar-mode))
 
   ;; Add paredit-mode to IELM
-  (add-hook 'ielm-mode-hook 'mike-ielm-mode-hook))
+  (add-hook 'ielm-mode-hook 'mike-ielm-mode-hook)
+  (add-hook 'emacs-lisp-mode-hook 'mike-emacs-lisp-mode-hook))
 
 (mike-init)
 
