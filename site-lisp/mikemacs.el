@@ -105,8 +105,6 @@ From URL `http://www.mygooglest.com/fni/dot-emacs.html'."
 (defun mike-install-packages ()
   "Install uninstalled packages in `mike-packages'."
   (interactive)
-  (dolist (repo mike-package-repositories)
-    (add-to-list 'package-archives repo t))
   (package-refresh-contents)
   (dolist (pkg mike-packages)
     (when (mike-package-to-install-p pkg)
@@ -247,7 +245,8 @@ Update `load-path' with `mike-plugins-dir'."
 (defun mike-init ()
   "Initialize opinionated mikemacs defaults.
 
-Load customizations, load mikemacs packages and setup global modes and keybindings."
+Load customizations, load mikemacs packages and setup global modes and
+keybindings."
 
   ;; Load customizations from emacs-custom.el except on Aquamacs.
   (when (not (featurep 'aquamacs))
@@ -257,6 +256,8 @@ Load customizations, load mikemacs packages and setup global modes and keybindin
 
   ;; Load core packages. Bootstrap if packages aren't found.
   (package-initialize)
+  (dolist (repo mike-package-repositories)
+    (add-to-list 'package-archives repo t))
   (unless (mike-all-packages-installed-p)
     (mike-install-packages))
   (dolist (pkg mike-packages)
