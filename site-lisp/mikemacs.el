@@ -254,6 +254,10 @@ keybindings."
                                         user-emacs-directory))
     (load custom-file 'noerror))
 
+  ;; Update paths and plugins. Has to happen before packages to find
+  ;; custom plugins.
+  (mike-update-paths)
+
   ;; Load core packages. Bootstrap if packages aren't found.
   (package-initialize)
   (dolist (repo mike-package-repositories)
@@ -267,8 +271,7 @@ keybindings."
   (global-set-key (kbd "M-o") 'other-window)
   (global-set-key (kbd "C-c g") 'magit-status)
 
-  ;; Update paths and exec path
-  (mike-update-paths)
+  ;; Update exec path
   (when (memq window-system '(mac ns))
     (require 'exec-path-from-shell)
     (exec-path-from-shell-initialize))
