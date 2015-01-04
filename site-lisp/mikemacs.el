@@ -300,6 +300,12 @@ keybindings."
   (yas-global-mode 1)
   (diminish 'yas-minor-mode)
 
+  ;; paredit
+  (define-key paredit-mode-map (kbd "M-]") 'paredit-forward-slurp-sexp)
+  (define-key paredit-mode-map (kbd "M-[") 'paredit-backward-slurp-sexp)
+  (define-key paredit-mode-map (kbd "M-}") 'paredit-forward-barf-sexp)
+  (define-key paredit-mode-map (kbd "M-{") 'paredit-backward-barf-sexp)
+
   ;; recent files
   (recentf-mode)
 
