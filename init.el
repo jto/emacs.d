@@ -26,7 +26,8 @@ See URL `http://a-nickels-worth.blogspot.com/2007/11/effective-emacs.html'.")
 ;;; environment specific parameters before libraries are loaded. For
 ;;; example, `user-mail-address'.
 
-(let ((before-file (expand-file-name "before-init.el" user-emacs-directory)))
+(let ((before-file (expand-file-name "before-init.el"
+                                     user-emacs-directory)))
   (when (file-exists-p before-file)
     (load-file before-file)))
 
@@ -34,7 +35,7 @@ See URL `http://a-nickels-worth.blogspot.com/2007/11/effective-emacs.html'.")
 ;;; require cl-lib instead of cl.
 
 ;;; Package cl-lib gives us access to nifty macros and functions from
-;;; Common Lisp. My favorite is `pushnew'.
+;;; Common Lisp. My favorite is `cl-pushnew'.
 
 (require 'cl-lib)
 
@@ -44,18 +45,509 @@ See URL `http://a-nickels-worth.blogspot.com/2007/11/effective-emacs.html'.")
 
 ;;; * Environment
 
+;;; ** site-lisp plugins
+
+(defvar mike-plugins-dir
+  (expand-file-name "site-lisp" user-emacs-directory)
+  "Directory that contains manually installed code and packages.")
+
 ;;; Add site-lisp to the load path to pick up libraries I install
 ;;; manually, outside of package management tools.
 
-(pushnew (expand-file-name "site-lisp" user-emacs-directory) load-path)
+(cl-pushnew mike-plugins-dir load-path)
 
-;;; * Packages
+;;; Update `load-path' with plugins subdirectories from site-lisp.
+;;; Make sure it's a proper directory and not the special directories
+;;; "." and ".."
 
-;;; Include mikemacs package. I'll be reviewing the contained modules
-;;; and gradually incorporating them into this configuration file.
+(dolist (dirname (directory-files mike-plugins-dir t "\\w+"))
+  (when (file-directory-p dirname)
+    (cl-pushnew dirname load-path)))
 
-(require 'mikemacs)
+;;; ** PATH and exec-path
 
+;;; Add common paths to `exec-path' and PATH environment variable for
+;;; executing files in /usr/local/bin, ~/bin, and ~/local/bin.
+
+(defvar mike-path-paths
+  (cl-map 'list 'expand-file-name '("/usr/local/bin" "~/bin" "~/local/bin"))
+  "Paths to safely add to $PATH environment variable and `exec-path'.
+
+Useful for graphical Emacs that may not pick up $PATH from user's
+bashrc. Set in before-init.el to override.")
+
+(let ((path-list (cl-map 'list
+                         'expand-file-name
+                         '("/usr/local/bin" "~/bin" "~/local/bin"))))
+  ;; add to exec-path
+  (cl-dolist (path path-list)
+    (cl-pushnew path exec-path))
+  ;; add to PATH
+  (setenv "PATH"
+          (let ((env-path-as-list (split-string (getenv "PATH") ":")))
+            (mapconcat 'identity
+                       (cl-dolist (path path-list env-path-as-list)
+                         (cl-pushnew path env-path-as-list))
+                       ":"))))
+
+;;; * Package Management
+
+;;; We initialize ELPA, the Emacs package management system.
+
+(require 'package)
+(package-initialize)
+
+;;; ** Package repositories
+
+;;; We add marmalade and melpa repositories to supplement ELPA.
+
+(add-to-list 'package-archives
+             '("marmalade" . "http://marmalade-repo.org/packages/"))
+;; (add-to-list 'package-archives
+;;              '("melpa" . "http://melpa.milkbox.net/packages/") t)
+
+;;; ** Define default packages
+
+(defvar mike-extra-packages '()
+  "Additional packages to install/load.  Set in before-init.el.")
+
+(defvar mike-packages '(marmalade
+                        magit
+                        autopair
+                        paredit
+                        yasnippet
+                        undo-tree
+                        auto-complete
+                        projectile
+                        flx-ido
+                        ido-vertical-mode
+                        diminish
+                        exec-path-from-shell
+                        web-mode
+                        org
+                        helm
+                        geiser
+			solarized-theme)
+  "Default packages to install/load.")
+
+;;; ** Install default packages
+
+;;; Unless all packages are already installed, refresh the repository
+;;; package list and install any uninstalled packages.
+
+(let ((packages (append mike-packages mike-extra-packages)))
+  (unless
+      ;; All packages are installed
+      (cl-loop for pkg in packages
+            when (not (package-installed-p pkg)) do (cl-return nil)
+            finally (cl-return t))
+    (message "%s" "Refreshing package database...")
+    (package-refresh-contents)
+    (dolist (pkg packages)
+      (when (not (package-installed-p pkg))
+        (package-install pkg)))))
+
+;;; * exec-path-from-shell
+
+;;; When we start in a graphical environment, such as on a Mac, we
+;;; want to pull some environment settings from the shell.
+
+(when (memq window-system '(ns mac))
+  (require 'exec-path-from-shell)
+  (exec-path-from-shell-initialize))
+
+;;; * Start-up options
+
+;;; ** Turn off the splash screen
+
+(setq inhibit-splash-screen t)
+
+;;; ** Turn off the toolbar
+
+(tool-bar-mode -1)
+
+;;; ** Selection
+
+;;; Typing when the mark is active will write over the marked region.
+;;; This is the current expected behavior and most like other text
+;;; editors.
+
+(delete-selection-mode t)
+
+;;; Highlight region when mark is active.
+
+(transient-mark-mode t)
+
+;;; Cut and paste using the system clipboard as well as Emacs'
+;;; internal clipboard.
+
+(setq x-select-enable-clipboard t)
+
+;;; ** Display settings
+
+(when window-system
+  ;; Set frame title to buffer title.
+  (setq frame-title-format '(buffer-file-name "%f" ("%b")))
+  ;; Try to use inconsolata 14 by default
+  (set-face-attribute 'default nil
+                      :family "Inconsolata"
+                      :height 140
+                      :weight 'normal
+                      :width 'normal)
+  ;; Fallback to DejaVu Sans Mono for characters not supported by
+  ;; Inconsolata
+  (when (functionp 'set-fontset-font)
+    (set-fontset-font "fontset-default"
+                      'unicode
+                      (font-spec :family "DejaVu Sans Mono"
+                                 :width 'normal
+                                 :size 12.4
+                                 :weight 'normal))))
+
+;;; Put empty line markers on the left side when the file ends.
+
+(setq-default indicate-empty-lines t)
+(when (not indicate-empty-lines)
+  (toggle-indicate-empty-lines))
+
+;;; ** Indentation
+
+;;; Spaces forever.
+
+(setq tab-width 2
+      indent-tabs-mode nil)
+
+;;; ** Smart indentation with electric-indent-mode
+
+(require 'electric)
+(electric-indent-mode 1)
+
+;;; ** Show column numbers
+
+(setq column-number-mode t)
+
+;;; ** Line numbers
+
+(require 'linum)
+(global-linum-mode 1)
+
+;;; ** Show trailing whitespace
+
+(setq show-trailing-whitespace t)
+
+;;; ** Yes and no
+
+;;; Make yes and no answers one character.
+
+(defalias 'yes-or-no-p 'y-or-n-p)
+
+;;; ** Global keybindings
+
+;;; Sane return behavior for programming.
+(global-set-key (kbd "RET") 'newline-and-indent)
+;;; Quicker than C-x o
+(global-set-key (kbd "M-o") 'other-window)
+;;; Better than dabbrev. TODO: Auto complete?
+(global-set-key (kbd "M-/") 'hippie-expand)
+;;; Increase/decrease text size as expected.
+(global-set-key (kbd "C-+") 'text-size-increase)
+(global-set-key (kbd "C--") 'text-size-decrease)
+
+;;; ** Echo keystrokes so we don't wait around
+
+(setq echo-keystrokes 0.1)
+
+;;; ** No dialog boxes
+
+(setq use-dialog-box nil)
+
+;;; ** Visual bell
+
+(setq visibile-bell t)
+
+;;; ** Highlight parentheses
+
+(show-paren-mode t)
+
+;;; Highlight matching parentheses. Smartparens extends to other types
+;;; of brackets as well.
+
+;; (require 'smartparens)
+;; (show-smartparens-global-mode 1)
+
+;;; * Backup files
+
+(defvar mike-backup-dir
+  (expand-file-name "backups" user-emacs-directory)
+  "Directory for Emacs backups. Set in before-init.el to override.")
+
+;;; Create backup directory and all parent directories if it doesn't
+;;; exist.
+
+(make-directory mike-backup-dir t)
+
+;;; Backup suggestions from URL
+;;; `http://stackoverflow.com/questions/151945/how-do-i-control-how-emacs-makes-backup-files'
+
+(setq
+ ;; Use version numbers for backups.
+ version-control t
+ ;; Number of newest versions to keep.
+ kept-new-versions 10
+ ;; number of oldest versions to keep.
+ kept-old-versions 0
+ ;; Don't ask to delete excess backup versions.
+ delete-old-versions t
+ ;; Copy files, don't rename them.
+ backup-by-copying t
+ ;; Also backup versioned files.
+ vc-make-backup-files t)
+
+;;; We make two kinds of backup.
+
+;;; 1. Per-session backups: once on the first save of the buffer in
+;;;    each Emacs session. This simulates Emacs' default backup
+;;;    behavior.
+
+;;; 2. Per-save backups: once on every save. Useful when leaving Emacs
+;;;    running for a long time.
+
+;;; The backups go in difference places and Emacs creates the backup
+;;; directories automatically if they don't exists.
+
+;;; Default and per-save backups go here:
+
+(setq backup-directory-alist
+      `(("" . ,(expand-file-name "per-save" mike-backup-dir))))
+
+(defun mike-force-backup-of-buffer ()
+  ;; Make a special "per-session" backup at the first save of each
+  ;; Emacs session.
+  (when (not buffer-backed-up)
+    ;; Override default parameters for per-session backups.
+    (let ((backup-directory-alist `(("" . ,(expand-file-name "per-session" mike-backup-dir))))
+          (kept-new-versions 3))
+      (backup-buffer)))
+  ;; Make a "per-save" backup on each save. The first save results
+  ;; in both a per-session and per-save backup, to keep the
+  ;; numbering of per-save backups conistent.
+  (let ((buffer-backed-up nil))
+    (backup-buffer)))
+
+;;; Run our custom backup function whenever a file is saved.
+
+(add-hook 'before-save-hook 'mike-force-backup-of-buffer)
+
+;;; * Utility libraries
+
+;;; These are external libraries and packages to enhance Emacs. I add
+;;; my own utility functions in a later section.
+
+;;; ** Diminish
+
+;;; Diminish removes clutter from the mode line. I use it to hide many
+;;; global minor modes.
+
+(require 'diminish-autoloads)
+
+;;; ** Magit
+
+(require 'magit-autoloads)
+(global-set-key (kbd "C-c g") 'magit-status)
+
+;;; ** undo-tree
+
+;;; More powerful undo and redo with undo-tree. Don't show minor mode
+;;; in mode line.
+
+(require 'undo-tree-autoloads)
+(global-undo-tree-mode)
+(diminish 'undo-tree-mode)
+
+;;; ** yasnippet
+
+;;; Scriptable templates with yasnippet templates. Unbind default TAB
+;;; keybinding in favor of C-o, which I don't use otherwise. Don't
+;;; show minor mode in mode line.
+
+(require 'yasnippet)
+
+(define-key yas-minor-mode-map (kbd "TAB") nil)
+(define-key yas-minor-mode-map (kbd "C-o") 'yas-expand-from-trigger-key)
+(yas-global-mode 1)
+(diminish 'yas-minor-mode)
+
+;;; ** paredit
+
+(require 'paredit)
+
+;;; Rebind paredit barf and slurp keys to what I find more natural.
+
+(define-key paredit-mode-map (kbd "M-]") 'paredit-forward-slurp-sexp)
+(define-key paredit-mode-map (kbd "M-[") 'paredit-backward-slurp-sexp)
+(define-key paredit-mode-map (kbd "M-}") 'paredit-forward-barf-sexp)
+(define-key paredit-mode-map (kbd "M-{") 'paredit-backward-barf-sexp)
+
+;;; ** Recent files
+
+;;; Keep track of recent files.  Very handy.
+
+(require 'recentf)
+(recentf-mode)
+
+;;; ** Autopair
+
+;;; We want autopair in most modes, so we enable it globally and will
+;;; disable it where we don't want it. Don't show minor mode in mode
+;;; line.
+
+(require 'autopair)
+(autopair-global-mode 1)
+(diminish 'autopair-mode)
+
+;;; ** Autocomplete
+
+;;; We want smart auto-completion. Don't show minor mode in mode line.
+
+(require 'auto-complete)
+
+(autopair-global-mode 1)
+(diminish 'auto-complete-mode)
+
+;;; ** Projectile
+
+;;; Projectile brings fast and useful project management to Emacs.
+;;; Don't show minor mode in mode line.
+
+(require 'projectile)
+(projectile-global-mode 1)
+(diminish 'projectile-mode)
+
+;;; ** Outshine to outline
+
+;;; ** ido, ido-flx, ido-vertical-mode or helm?
+
+;;; * Language and interpreter hooks
+
+;;; ** Ielm
+
+(defun mike-ielm-mode-hook ()
+  "Disable autopair and enable paredit for IELM."
+  (autopair-mode 0)
+  (paredit-mode 1))
+
+(add-hook 'ielm-mode-hook 'mike-ielm-mode-hook)
+
+;;; ** Elisp
+
+(defun mike-emacs-lisp-mode-hook ()
+  "Disable autopair and enable paredit for Elisp code."
+  (autopair-mode 0)
+  (paredit-mode 1))
+
+(add-hook 'emacs-lisp-mode-hook 'mike-emacs-lisp-mode-hook)
+
+;;; ** Scheme
+
+;; Geiser customizations (Scheme Slime-like environment)
+
+(require 'geiser-autoloads)
+
+;; Disable read-only prompt in Geiser. The read-only prompt doesn't
+;; play nicely with custom REPLs such as in SICP.
+(defun mike-geiser-turn-off-read-only-prompt ()
+  "Turn off read-only prompt in `geiser'."
+  (interactive)
+  (setq geiser-repl-read-only-prompt-p nil))
+
+(defun mike-geiser-mode-hook ()
+  "Disable autopair and enable paredit for Scheme code when
+interacting with the geiser REPL."
+  (autopair-mode 0)
+  (paredit-mode 1))
+
+(add-hook 'geiser-repl-mode-hook 'mike-geiser-mode-hook)
+
+(defun mike-scheme-mode-hook ()
+  "Disable autopair and enable paredit for Scheme code."
+  (autopair-mode 0)
+  (paredit-mode 1))
+
+(add-hook 'scheme-mode-hook 'mike-scheme-mode-hook)
+
+;;; * My utilities
+
+;;; ** Buffer utilities
+
+(defun mike-swap-buffers ()
+  "Put the buffer from the selected window in next window, and vice versa."
+  (interactive)
+  (let* ((this (selected-window))
+         (other (next-window))
+         (this-buffer (window-buffer this))
+         (other-buffer (window-buffer other)))
+    (set-window-buffer other this-buffer)
+    (set-window-buffer this other-buffer)))
+
+(defun mike-clean-buffer ()
+  "Untabify and strip trailing whitespace in current buffer."
+  (interactive)
+  (save-excursion
+    (untabify (point-min) (point-max))
+    (delete-trailing-whitespace (point-min) (point-max))))
+
+(defun mike-rename-buffer-file ()
+  "Renames current buffer and file it is visiting.
+
+From URL `http://whattheemacsd.com/'."
+  (interactive)
+  (let ((name (buffer-name))
+        (filename (buffer-file-name)))
+    (if (not (and filename (file-exists-p filename)))
+        (error "Buffer '%s' is not visiting a file!" name)
+      (let ((new-name (read-file-name "New name: " filename)))
+        (if (get-buffer new-name)
+            (error "A buffer named '%s' already exists!" new-name)
+          (rename-file filename new-name 1)
+          (rename-buffer new-name)
+          (set-visited-file-name new-name)
+          (set-buffer-modified-p nil)
+          (message "File '%s' successfully renamed to '%s'"
+                   name (file-name-nondirectory new-name)))))))
+
+(defun mike-unfill-region (beg end)
+  "Unfill the region, joining text paragraphs into a single
+  logical line.  This is useful, e.g., for use with
+  `visual-line-mode'."
+  (interactive "*r")
+  (let ((fill-column (point-max)))
+    (fill-region beg end)))
+
+;;; * Theme
+
+;;; Load solarized-light in a graphical environment. Load the wombat
+;;; them in a terminal.
+
+(if window-system
+    (progn
+      ;; Set some options that work better with solarized.
+      (setq x-underline-at-descent-line t)
+      ;; Load solarized.
+      (load-theme 'solarized-light t))
+  ;; Load wombat for terminal use.
+  (load-theme 'wombat t))
+
+;;; * Customize
+
+(defvar mike-custom-file
+  (expand-file-name "emacs-custom.el" user-emacs-directory)
+  "Load customizations from this file. Set in before-init.el to override.")
+
+;;; Load customizations from emacs-custom.el except on Aquamacs.
+
+(when (not (featurep 'aquamacs))
+  (setq custom-file mike-custom-file)
+  (load custom-file 'noerror))
 
 ;;; * Finish
 
