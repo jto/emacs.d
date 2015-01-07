@@ -423,9 +423,18 @@ bashrc. Set in before-init.el to override.")
 (projectile-global-mode 1)
 (diminish 'projectile-mode)
 
-;;; ** Outshine to outline
+;;; ** ido
 
-;;; ** ido, ido-flx, ido-vertical-mode or helm?
+;;; Enable ido everywhere, flexible matching, the easier to use
+;;; vertical ido mode which presents options in a list much like a
+;;; dropdown menu.
+
+(require 'ido)
+(require 'flx-ido)
+(require 'ido-vertical-mode)
+
+(ido-mode 1)
+(ido-vertical-mode 1)
 
 ;;; * Language and interpreter hooks
 
