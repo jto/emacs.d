@@ -20,3 +20,4 @@ after-init.el
 undohist/
 *.eld
 themes/
+site-lisp/
