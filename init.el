@@ -203,6 +203,10 @@ bashrc. Set in before-init.el to override.")
                                  :size 12.4
                                  :weight 'normal))))
 
+;;; Use the menu.
+
+(menu-bar-mode 1)
+
 ;;; Put empty line markers on the left side when the file ends.
 
 (setq-default indicate-empty-lines t)
