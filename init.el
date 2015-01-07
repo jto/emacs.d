@@ -115,7 +115,6 @@ bashrc. Set in before-init.el to override.")
                         magit
                         autopair
                         paredit
-                        yasnippet
                         undo-tree
                         auto-complete
                         projectile
@@ -363,19 +362,6 @@ bashrc. Set in before-init.el to override.")
 (require 'undo-tree-autoloads)
 (global-undo-tree-mode)
 (diminish 'undo-tree-mode)
-
-;;; ** yasnippet
-
-;;; Scriptable templates with yasnippet templates. Unbind default TAB
-;;; keybinding in favor of C-o, which I don't use otherwise. Don't
-;;; show minor mode in mode line.
-
-(require 'yasnippet)
-
-(define-key yas-minor-mode-map (kbd "TAB") nil)
-(define-key yas-minor-mode-map (kbd "C-o") 'yas-expand-from-trigger-key)
-(yas-global-mode 1)
-(diminish 'yas-minor-mode)
 
 ;;; ** paredit
 
