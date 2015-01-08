@@ -529,6 +529,7 @@ override.  Overriding this may cause an error.")
   (paredit-mode 1))
 
 (add-hook 'ielm-mode-hook 'mike-ielm-mode-hook)
+(add-hook 'ielm-mode-hook 'turn-on-eldoc-mode)
 
 ;;; ** Elisp
 
@@ -538,6 +539,7 @@ override.  Overriding this may cause an error.")
   (paredit-mode 1))
 
 (add-hook 'emacs-lisp-mode-hook 'mike-emacs-lisp-mode-hook)
+(add-hook 'emacs-lisp-mode-hook 'turn-on-eldoc-mode)
 
 ;;; ** Scheme
 
