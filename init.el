@@ -128,6 +128,7 @@ override.")
                         web-mode
                         org
                         helm
+			helm-projectile
                         geiser
 			solarized-theme)
   "Default packages to install/load.  Set in before-init.el to
@@ -402,6 +403,86 @@ override.  Overriding this may cause an error.")
 (autopair-global-mode 1)
 (diminish 'autopair-mode)
 
+;;; ** Helm
+
+;;; Helm is a navigation utility I'm trying out.  From URL
+;;; `http://tuhdo.github.io/helm-intro.html'.
+
+(require 'helm)
+(require 'helm-config)
+
+;;; *** Helm settings
+
+(setq
+ ;; Open helm buffer inside current window, not occupy whole other window.
+ helm-split-window-in-side-p t
+ ;; Move to end or beginning of source when reaching top or bottom of source.
+ helm-move-to-line-cycle-in-source t
+ ;; Search for library in `require' and `declare-function' sexp.
+ helm-ff-search-library-in-sexp t
+ ;; Scroll 8 lines in other window using M-<next>/M-<prior>
+ helm-scroll-amount 8
+ ;; Use recent files.
+ helm-ff-file-name-history-use-recentf t)
+
+;;; If we have access to curl, use it for Google suggestions.
+(when (executable-find "curl")
+  (setq helm-google-suggest-use-curl-p t))
+
+;;; *** Helm keybindings
+
+;;; Start helm with C-c h.
+
+(global-set-key (kbd "C-c h") 'helm-command-prefix)
+(global-unset-key (kbd "C-x c"))
+
+;;; Rebind tab to run persistent action.
+(define-key helm-map (kbd "<tab>") 'helm-execute-persistent-action)
+;;; Make tab work in terminal.
+(define-key helm-map (kbd "C-i") 'helm-execute-persistent-action)
+
+;;; List actions using C-z
+(define-key helm-map (kbd "C-z") 'helm-select-action)
+
+;;; *** helm-M-x
+
+;;; Bind M-x to helm-M-x.
+
+(global-set-key (kbd "M-x") 'helm-M-x)
+
+;;; Enable fuzzy matching.
+
+(setq helm-M-x-fuzzy-match t)
+
+;;; *** helm-show-kill-ring
+
+;;; Use Helm to show the kill ring.
+
+(global-set-key (kbd "M-y") 'helm-show-kill-ring)
+
+;;; *** helm-mini
+
+(global-set-key (kbd "C-x b") 'helm-mini)
+
+;;; enable fuzzy matching.
+
+(setq helm-buffers-fuzzy-matching t
+      helm-recentf-fuzzy-match t)
+
+;;; *** helm-find-files
+
+;;; Use C-x C-f to use helm to find files.
+
+(global-set-key (kbd "C-x C-f") 'helm-find-files)
+
+;;; *** Start helm-mode globally
+
+(helm-mode 1)
+
+;;; Don't show minor mode in mode line.
+
+(diminish 'helm-mode)
+
 ;;; ** Autocomplete
 
 ;;; We want smart auto-completion. Don't show minor mode in mode line.
@@ -417,6 +498,11 @@ override.  Overriding this may cause an error.")
 (projectile-global-mode 1)
 (diminish 'projectile-mode)
 
+;;; Use helm projectile.
+
+(require 'helm-projectile)
+(setq projectile-completion-system 'helm)
+
 ;;; ** ido
 
 ;;; Enable ido everywhere, flexible matching, the easier to use
@@ -427,8 +513,11 @@ override.  Overriding this may cause an error.")
 (require 'flx-ido)
 (require 'ido-vertical-mode)
 
-(ido-mode 1)
-(ido-vertical-mode 1)
+;;; Disable ido-mode for now in favor of helm (below).
+
+;; (ido-mode 1)
+;; (ido-vertical-mode 1)
+;; (flx-ido-mode 1)
 
 ;;; * Language and interpreter hooks
 
