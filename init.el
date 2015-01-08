@@ -402,10 +402,7 @@ bashrc. Set in before-init.el to override.")
 
 ;;; We want smart auto-completion. Don't show minor mode in mode line.
 
-(require 'auto-complete)
-
-(autopair-global-mode 1)
-(diminish 'auto-complete-mode)
+;; (require 'auto-complete)
 
 ;;; ** Projectile
 
