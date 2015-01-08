@@ -138,12 +138,15 @@ bashrc. Set in before-init.el to override.")
   (unless
       ;; All packages are installed
       (cl-loop for pkg in packages
-            when (not (package-installed-p pkg)) do (cl-return nil)
-            finally (cl-return t))
+	       when (not (or (package-installed-p pkg)
+			     (locate-library (symbol-name pkg))))
+	       do (cl-return nil)
+	       finally (cl-return t))
     (message "%s" "Refreshing package database...")
     (package-refresh-contents)
     (dolist (pkg packages)
-      (when (not (package-installed-p pkg))
+      (when (not (or (package-installed-p pkg)
+		     (locate-library (symbol-name pkg))))
         (package-install pkg)))))
 
 ;;; * exec-path-from-shell
