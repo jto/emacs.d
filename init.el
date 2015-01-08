@@ -101,18 +101,21 @@ bashrc. Set in before-init.el to override.")
 
 ;;; We add marmalade and melpa repositories to supplement ELPA.
 
-(add-to-list 'package-archives
-             '("marmalade" . "http://marmalade-repo.org/packages/"))
-;; (add-to-list 'package-archives
-;;              '("melpa" . "http://melpa.milkbox.net/packages/") t)
+(defvar mike-package-archives
+  '(("marmalade" . "http://marmalade-repo.org/packages/")
+    ("melpa" . "http://melpa.org/packages/"))
+  "Repos to add to `package-archives'.  Set in before-init.el to
+override.")
+
+(dolist (repo mike-package-archives)
+  (add-to-list 'package-archives repo))
 
 ;;; ** Define default packages
 
 (defvar mike-extra-packages '()
   "Additional packages to install/load.  Set in before-init.el.")
 
-(defvar mike-packages '(marmalade
-                        magit
+(defvar mike-packages '(magit
                         autopair
                         paredit
                         undo-tree
@@ -127,7 +130,8 @@ bashrc. Set in before-init.el to override.")
                         helm
                         geiser
 			solarized-theme)
-  "Default packages to install/load.")
+  "Default packages to install/load.  Set in before-init.el to
+override.  Overriding this may cause an error.")
 
 ;;; ** Install default packages
 
