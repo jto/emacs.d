@@ -269,7 +269,7 @@ bashrc. Set in before-init.el to override.")
 
 ;;; ** Visual bell
 
-(setq visibile-bell t)
+(setq visible-bell t)
 
 ;;; ** Highlight parentheses
 
