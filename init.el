@@ -359,11 +359,11 @@ override.  Overriding this may cause an error.")
 ;;; Diminish removes clutter from the mode line. I use it to hide many
 ;;; global minor modes.
 
-(require 'diminish-autoloads)
+(require 'diminish)
 
 ;;; ** Magit
 
-(require 'magit-autoloads)
+(require 'magit)
 (global-set-key (kbd "C-c g") 'magit-status)
 
 ;;; ** undo-tree
@@ -371,7 +371,7 @@ override.  Overriding this may cause an error.")
 ;;; More powerful undo and redo with undo-tree. Don't show minor mode
 ;;; in mode line.
 
-(require 'undo-tree-autoloads)
+(require 'undo-tree)
 (global-undo-tree-mode)
 (diminish 'undo-tree-mode)
 
@@ -529,6 +529,9 @@ override.  Overriding this may cause an error.")
   (paredit-mode 1))
 
 (add-hook 'ielm-mode-hook 'mike-ielm-mode-hook)
+
+;;; Show current function information in message area.
+
 (add-hook 'ielm-mode-hook 'turn-on-eldoc-mode)
 
 ;;; ** Elisp
@@ -539,13 +542,16 @@ override.  Overriding this may cause an error.")
   (paredit-mode 1))
 
 (add-hook 'emacs-lisp-mode-hook 'mike-emacs-lisp-mode-hook)
+
+;;; Show current function information in message area.
+
 (add-hook 'emacs-lisp-mode-hook 'turn-on-eldoc-mode)
 
 ;;; ** Scheme
 
 ;; Geiser customizations (Scheme Slime-like environment)
 
-(require 'geiser-autoloads)
+(require 'geiser)
 
 ;; Disable read-only prompt in Geiser. The read-only prompt doesn't
 ;; play nicely with custom REPLs such as in SICP.
