@@ -258,8 +258,6 @@ override.  Overriding this may cause an error.")
 (global-set-key (kbd "RET") 'newline-and-indent)
 ;;; Quicker than C-x o
 (global-set-key (kbd "M-o") 'other-window)
-;;; Better than dabbrev. TODO: Auto complete?
-(global-set-key (kbd "M-/") 'hippie-expand)
 ;;; Increase/decrease text size as expected.
 (global-set-key (kbd "C-+") 'text-size-increase)
 (global-set-key (kbd "C--") 'text-size-decrease)
@@ -402,6 +400,13 @@ override.  Overriding this may cause an error.")
 (require 'autopair)
 (autopair-global-mode 1)
 (diminish 'autopair-mode)
+
+;;; ** Hippie expand
+
+;;; Expands current word.  A good quick choice for expansions when
+;;; auto-complete isn't needed.  Bind to M-/.
+
+(global-set-key (kbd "M-/") 'hippie-expand)
 
 ;;; ** Helm
 
