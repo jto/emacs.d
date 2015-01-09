@@ -129,8 +129,10 @@ override.")
                         org
                         helm
 			helm-projectile
+			ac-helm
                         geiser
-			solarized-theme)
+			solarized-theme
+			anzu)
   "Default packages to install/load.  Set in before-init.el to
 override.  Overriding this may cause an error.")
 
@@ -359,6 +361,22 @@ override.  Overriding this may cause an error.")
 
 (require 'diminish)
 
+;;; ** Anzu mode
+
+;;; Anzu mode displays the number of matching searches when doing an
+;;; incremental search.  Many other editors do this and it's amazing
+;;; how useful it is.
+
+(require 'anzu)
+(global-anzu-mode 1)
+(diminish 'anzu-mode)
+
+;;; Almost always `query-replace-regexp' is more useful than
+;;; `query-replace'.  Bind `anzu-query-replace-regexp' to M-% to use
+;;; the anzu version.
+
+(global-set-key (kbd "M-%") 'anzu-query-replace-regexp)
+
 ;;; ** Magit
 
 (require 'magit)
@@ -407,6 +425,22 @@ override.  Overriding this may cause an error.")
 ;;; auto-complete isn't needed.  Bind to M-/.
 
 (global-set-key (kbd "M-/") 'hippie-expand)
+
+;;; ** Autocomplete
+
+;;; We want smart auto-completion.
+(require 'auto-complete-config)
+(ac-config-default)
+
+;;; Don't show minor mode in mode line.
+(diminish 'auto-complete-mode)
+
+;;; Suggest auto-complete candidates with helm instead of a popup with
+;;; C-:.
+
+(require 'ac-helm)
+(global-set-key (kbd "C-:") 'ac-complete-with-helm)
+(define-key ac-complete-mode-map (kbd "C-:") 'ac-complete-with-helm)
 
 ;;; ** Helm
 
@@ -488,12 +522,6 @@ override.  Overriding this may cause an error.")
 
 (diminish 'helm-mode)
 
-;;; ** Autocomplete
-
-;;; We want smart auto-completion. Don't show minor mode in mode line.
-
-;; (require 'auto-complete)
-
 ;;; ** Projectile
 
 ;;; Projectile brings fast and useful project management to Emacs.
@@ -518,7 +546,7 @@ override.  Overriding this may cause an error.")
 (require 'flx-ido)
 (require 'ido-vertical-mode)
 
-;;; Disable ido-mode for now in favor of helm (below).
+;;; Disable ido-mode for now in favor of helm.
 
 ;; (ido-mode 1)
 ;; (ido-vertical-mode 1)
