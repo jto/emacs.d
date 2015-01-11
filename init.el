@@ -132,6 +132,8 @@ override.")
 			ac-helm
                         geiser
 			solarized-theme
+			elisp-slime-nav
+			ace-jump-mode
 			anzu)
   "Default packages to install/load.  Set in before-init.el to
 override.  Overriding this may cause an error.")
@@ -258,11 +260,17 @@ override.  Overriding this may cause an error.")
 
 ;;; Sane return behavior for programming.
 (global-set-key (kbd "RET") 'newline-and-indent)
+
 ;;; Quicker than C-x o
 (global-set-key (kbd "M-o") 'other-window)
+
 ;;; Increase/decrease text size as expected.
 (global-set-key (kbd "C-+") 'text-size-increase)
 (global-set-key (kbd "C--") 'text-size-decrease)
+
+;;; Perform incremental search with regex.
+(global-set-key (kbd "C-s") 'isearch-forward-regexp)
+(global-set-key (kbd "C-r") 'isearch-backward-regexp)
 
 ;;; ** Echo keystrokes so we don't wait around
 
@@ -376,6 +384,11 @@ override.  Overriding this may cause an error.")
 ;;; the anzu version.
 
 (global-set-key (kbd "M-%") 'anzu-query-replace-regexp)
+
+;;; ** Ace jump mode
+
+(require 'ace-jump-mode)
+(global-set-key (kbd "C-0") 'ace-jump-mode)
 
 ;;; ** Magit
 
@@ -554,31 +567,29 @@ override.  Overriding this may cause an error.")
 
 ;;; * Language and interpreter hooks
 
-;;; ** Ielm
+;;; Don't display eldoc minor mode in the mode line.
 
-(defun mike-ielm-mode-hook ()
-  "Disable autopair and enable paredit for IELM."
-  (autopair-mode 0)
-  (paredit-mode 1))
-
-(add-hook 'ielm-mode-hook 'mike-ielm-mode-hook)
-
-;;; Show current function information in message area.
-
-(add-hook 'ielm-mode-hook 'turn-on-eldoc-mode)
+(diminish 'eldoc-mode)
 
 ;;; ** Elisp
 
+(require 'eldoc)
+(require 'elisp-slime-nav)
+
 (defun mike-emacs-lisp-mode-hook ()
-  "Disable autopair and enable paredit for Elisp code."
+  "Disable autopair and enable paredit for Elisp and IELM."
   (autopair-mode 0)
   (paredit-mode 1))
 
-(add-hook 'emacs-lisp-mode-hook 'mike-emacs-lisp-mode-hook)
+;;; Add hooks for elisp files and IELM repl.
 
-;;; Show current function information in message area.
-
-(add-hook 'emacs-lisp-mode-hook 'turn-on-eldoc-mode)
+(dolist (hook '(emacs-lisp-mode-hook ielm-mode-hook))
+  (add-hook hook 'mike-emacs-lisp-mode-hook)
+  ;; Show current function information in message area.
+  (add-hook hook 'turn-on-eldoc-mode)
+  ;; Turn on elisp slime navigation.  Navigate to function definition
+  ;; with M-. and jump back with M-,
+  (add-hook hook 'elisp-slime-nav-mode))
 
 ;;; ** Scheme
 
@@ -664,7 +675,17 @@ From URL `http://whattheemacsd.com/'."
 (if window-system
     (progn
       ;; Set some options that work better with solarized.
-      (setq x-underline-at-descent-line t)
+      (setq
+       ;; Looks better in Xorg.
+       x-underline-at-descent-line t
+       ;; Make the fringe stand out from the background.
+       solarized-distinct-fringe-background t
+       ;; Make the modeline high contrast.
+       solarized-high-contrast-mode-line t
+       ;; Use less bolding.
+       solarized-use-less-bold t
+       ;; Don't change size of org-mode headlines (but keep other size changes).
+       solarized-scale-org-headlines nil)
       ;; Load solarized.
       (load-theme 'solarized-light t))
   ;; Load wombat for terminal use.
