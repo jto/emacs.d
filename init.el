@@ -593,12 +593,12 @@ override.  Overriding this may cause an error.")
 
 ;;; ** Scheme
 
-;; Geiser customizations (Scheme Slime-like environment)
+;;; Geiser customizations (Scheme Slime-like environment)
 
 (require 'geiser)
 
-;; Disable read-only prompt in Geiser. The read-only prompt doesn't
-;; play nicely with custom REPLs such as in SICP.
+;;; Disable read-only prompt in Geiser. The read-only prompt doesn't
+;;; play nicely with custom REPLs such as in SICP.
 (defun mike-geiser-turn-off-read-only-prompt ()
   "Turn off read-only prompt in `geiser'."
   (interactive)
@@ -618,6 +618,23 @@ interacting with the geiser REPL."
   (paredit-mode 1))
 
 (add-hook 'scheme-mode-hook 'mike-scheme-mode-hook)
+
+;;; Enable auto-complete for geiser.
+
+(require 'ac-geiser)
+
+(add-hook 'geiser-mode-hook 'ac-geiser-setup)
+(add-hook 'geiser-repl-mode-hook 'ac-geiser-setup)
+(add-to-list 'ac-modes 'geiser-repl-mode-hook)
+
+;;; * Text mode settings
+
+(defun mike-fill-column-hook ()
+  "Set the fill column to Mike's preferred width. Add this
+function to a mode's hook to get my width."
+  (setq fill-column 79))
+
+(add-hook 'text-mode-hook 'mike-fill-column-hook)
 
 ;;; * My utilities
 
