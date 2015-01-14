@@ -439,6 +439,9 @@ override.  Overriding this may cause an error.")
 
 (global-set-key (kbd "M-/") 'hippie-expand)
 
+;;; Don't include punctuation at the end of expansions.
+(setq hippie-expand-dabbrev-as-symbol nil)
+
 ;;; ** Autocomplete
 
 ;;; We want smart auto-completion.
