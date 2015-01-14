@@ -131,6 +131,7 @@ override.")
 			helm-projectile
 			ac-helm
                         geiser
+                        ac-geiser
 			solarized-theme
 			elisp-slime-nav
 			ace-jump-mode
