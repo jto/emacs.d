@@ -265,10 +265,6 @@ override.  Overriding this may cause an error.")
 ;;; Quicker than C-x o
 (global-set-key (kbd "M-o") 'other-window)
 
-;;; Increase/decrease text size as expected.
-(global-set-key (kbd "C-+") 'text-size-increase)
-(global-set-key (kbd "C--") 'text-size-decrease)
-
 ;;; Perform incremental search with regex.
 (global-set-key (kbd "C-s") 'isearch-forward-regexp)
 (global-set-key (kbd "C-r") 'isearch-backward-regexp)
