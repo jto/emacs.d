@@ -78,24 +78,26 @@ bashrc. Set in before-init.el to override.")
 
 (let ((path-list (cl-map 'list
                          'expand-file-name
-                         '("/usr/local/bin" "~/bin" "~/local/bin"))))
-  ;; add to exec-path
+			 mike-path-paths)))
+  ;; add to `exec-path'
   (cl-dolist (path path-list)
     (cl-pushnew path exec-path))
   ;; add to PATH
   (setenv "PATH"
-          (let ((env-path-as-list (split-string (getenv "PATH") ":")))
+          (let ((env-path-as-list (split-string (getenv "PATH")
+						path-separator)))
             (mapconcat 'identity
                        (cl-dolist (path path-list env-path-as-list)
                          (cl-pushnew path env-path-as-list))
-                       ":"))))
+                       path-separator))))
 
 ;;; * Package Management
 
-;;; We initialize ELPA, the Emacs package management system.
-
 (require 'package)
-(package-initialize)
+
+;;; Don't activate packages at startup. We rely on use-package to
+;;; activate.
+(setq package-enable-at-startup nil)
 
 ;;; ** Package repositories
 
@@ -110,63 +112,78 @@ override.")
 (dolist (repo mike-package-archives)
   (add-to-list 'package-archives repo))
 
-;;; ** Define default packages
+;;; ** Bootstrap use-package
+;;; From URL
+;;; `http://www.lunaryorn.com/2015/01/06/my-emacs-configuration-with-use-package.html'
 
-(defvar mike-extra-packages '()
-  "Additional packages to install/load.  Set in before-init.el.")
+(package-initialize)
+(unless (package-installed-p 'use-package)
+  (package-refresh-contents)
+  (package-install 'use-package))
 
-(defvar mike-packages '(magit
-                        autopair
-                        paredit
-                        undo-tree
-                        auto-complete
-                        projectile
-                        flx-ido
-                        ido-vertical-mode
-                        diminish
-                        exec-path-from-shell
-                        web-mode
-                        org
-                        helm
-			helm-projectile
-			ac-helm
-                        geiser
-                        ac-geiser
-			solarized-theme
-			elisp-slime-nav
-			ace-jump-mode
-			anzu)
-  "Default packages to install/load.  Set in before-init.el to
-override.  Overriding this may cause an error.")
+(require 'use-package)
 
-;;; ** Install default packages
+;;; TODO: The following are replaced by use-package and can be deleted
+;;; when it's working.
 
-;;; Unless all packages are already installed, refresh the repository
-;;; package list and install any uninstalled packages.
+;; ;;; ** Define default packages
 
-(let ((packages (append mike-packages mike-extra-packages)))
-  (unless
-      ;; All packages are installed
-      (cl-loop for pkg in packages
-	       when (not (or (package-installed-p pkg)
-			     (locate-library (symbol-name pkg))))
-	       do (cl-return nil)
-	       finally (cl-return t))
-    (message "%s" "Refreshing package database...")
-    (package-refresh-contents)
-    (dolist (pkg packages)
-      (when (not (or (package-installed-p pkg)
-		     (locate-library (symbol-name pkg))))
-        (package-install pkg)))))
+;; (defvar mike-extra-packages '()
+;;   "Additional packages to install/load.  Set in before-init.el.")
+
+;; (defvar mike-packages '(magit
+;;                         autopair
+;;                         paredit
+;;                         undo-tree
+;;                         auto-complete
+;;                         projectile
+;;                         flx-ido
+;;                         ido-vertical-mode
+;;                         diminish
+;;                         exec-path-from-shell
+;;                         web-mode
+;;                         org
+;;                         helm
+;; 			helm-projectile
+;; 			ac-helm
+;;                         geiser
+;;                         ac-geiser
+;; 			solarized-theme
+;; 			elisp-slime-nav
+;; 			ace-jump-mode
+;; 			anzu)
+;;   "Default packages to install/load.  Set in before-init.el to
+;; override.  Overriding this may cause an error.")
+
+;; ;;; ** Install default packages
+
+;; ;;; Unless all packages are already installed, refresh the repository
+;; ;;; package list and install any uninstalled packages.
+
+;; (let ((packages (append mike-packages mike-extra-packages)))
+;;   (unless
+;;       ;; All packages are installed
+;;       (cl-loop for pkg in packages
+;; 	       when (not (or (package-installed-p pkg)
+;; 			     (locate-library (symbol-name pkg))))
+;; 	       do (cl-return nil)
+;; 	       finally (cl-return t))
+;;     (message "%s" "Refreshing package database...")
+;;     (package-refresh-contents)
+;;     (dolist (pkg packages)
+;;       (when (not (or (package-installed-p pkg)
+;; 		     (locate-library (symbol-name pkg))))
+;;         (package-install pkg)))))
 
 ;;; * exec-path-from-shell
 
 ;;; When we start in a graphical environment, such as on a Mac, we
 ;;; want to pull some environment settings from the shell.
 
-(when (memq window-system '(ns mac))
-  (require 'exec-path-from-shell)
-  (exec-path-from-shell-initialize))
+(use-package exec-path-from-shell
+  :ensure t
+  :config (when (memq window-system '(ns mac))
+	    (exec-path-from-shell-initialize)))
 
 ;;; * Start-up options
 
@@ -218,7 +235,7 @@ override.  Overriding this may cause an error.")
 
 ;;; Use the menu.
 
-(menu-bar-mode 1)
+(when window-system (menu-bar-mode 1))
 
 ;;; Put empty line markers on the left side when the file ends.
 
@@ -235,8 +252,8 @@ override.  Overriding this may cause an error.")
 
 ;;; ** Smart indentation with electric-indent-mode
 
-(require 'electric)
-(electric-indent-mode 1)
+(use-package electric
+  :config (electric-indent-mode 1))
 
 ;;; ** Show column numbers
 
@@ -244,8 +261,8 @@ override.  Overriding this may cause an error.")
 
 ;;; ** Line numbers
 
-(require 'linum)
-(global-linum-mode 1)
+(use-package linum
+  :config (global-linum-mode 1))
 
 ;;; ** Show trailing whitespace
 
@@ -283,13 +300,8 @@ override.  Overriding this may cause an error.")
 
 ;;; ** Highlight parentheses
 
-(show-paren-mode t)
-
-;;; Highlight matching parentheses. Smartparens extends to other types
-;;; of brackets as well.
-
-;; (require 'smartparens)
-;; (show-smartparens-global-mode 1)
+(use-package paren
+  :config (show-paren-mode t))
 
 ;;; * Backup files
 
