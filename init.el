@@ -305,66 +305,10 @@ override.")
 
 ;;; * Backup files
 
-(defvar mike-backup-dir
-  (expand-file-name "backups" user-emacs-directory)
-  "Directory for Emacs backups. Set in before-init.el to override.")
-
-;;; Create backup directory and all parent directories if it doesn't
-;;; exist.
-
-(make-directory mike-backup-dir t)
-
-;;; Backup suggestions from URL
-;;; `http://stackoverflow.com/questions/151945/how-do-i-control-how-emacs-makes-backup-files'
-
-(setq
- ;; Use version numbers for backups.
- version-control t
- ;; Number of newest versions to keep.
- kept-new-versions 10
- ;; number of oldest versions to keep.
- kept-old-versions 0
- ;; Don't ask to delete excess backup versions.
- delete-old-versions t
- ;; Copy files, don't rename them.
- backup-by-copying t
- ;; Also backup versioned files.
- vc-make-backup-files t)
-
-;;; We make two kinds of backup.
-
-;;; 1. Per-session backups: once on the first save of the buffer in
-;;;    each Emacs session. This simulates Emacs' default backup
-;;;    behavior.
-
-;;; 2. Per-save backups: once on every save. Useful when leaving Emacs
-;;;    running for a long time.
-
-;;; The backups go in difference places and Emacs creates the backup
-;;; directories automatically if they don't exists.
-
-;;; Default and per-save backups go here:
-
-(setq backup-directory-alist
-      `(("" . ,(expand-file-name "per-save" mike-backup-dir))))
-
-(defun mike-force-backup-of-buffer ()
-  ;; Make a special "per-session" backup at the first save of each
-  ;; Emacs session.
-  (when (not buffer-backed-up)
-    ;; Override default parameters for per-session backups.
-    (let ((backup-directory-alist `(("" . ,(expand-file-name "per-session" mike-backup-dir))))
-          (kept-new-versions 3))
-      (backup-buffer)))
-  ;; Make a "per-save" backup on each save. The first save results
-  ;; in both a per-session and per-save backup, to keep the
-  ;; numbering of per-save backups conistent.
-  (let ((buffer-backed-up nil))
-    (backup-buffer)))
-
-;;; Run our custom backup function whenever a file is saved.
-
-(add-hook 'before-save-hook 'mike-force-backup-of-buffer)
+(use-package mike-backup
+  :load-path "mikemacs/"
+  :init (add-hook 'before-save-hook #'mike-force-backup-of-buffer)
+  :config (mike-backup-init))
 
 ;;; * Utility libraries
 
@@ -376,7 +320,8 @@ override.")
 ;;; Diminish removes clutter from the mode line. I use it to hide many
 ;;; global minor modes.
 
-(require 'diminish)
+(use-package diminish
+  :ensure t)
 
 ;;; ** Anzu mode
 
@@ -384,40 +329,47 @@ override.")
 ;;; incremental search.  Many other editors do this and it's amazing
 ;;; how useful it is.
 
-(require 'anzu)
-(global-anzu-mode 1)
-(diminish 'anzu-mode)
-
-;;; Almost always `query-replace-regexp' is more useful than
-;;; `query-replace'.  Bind `anzu-query-replace-regexp' to M-% to use
-;;; the anzu version.
-
-(global-set-key (kbd "M-%") 'anzu-query-replace-regexp)
+(use-package anzu
+  :ensure t
+  ;; Almost always `query-replace-regexp' is more useful than
+  ;; `query-replace'.  Bind `anzu-query-replace-regexp' to M-% to use
+  ;; the anzu version.
+  :bind ("M-%" . anzu-query-replace-regexp)
+  :config (progn
+	    (global-anzu-mode 1)
+	    (diminish 'anzu-mode)))
 
 ;;; ** Ace jump mode
 
-(require 'ace-jump-mode)
-(global-set-key (kbd "C-0") 'ace-jump-mode)
+(use-package ace-jump-mode
+  :ensure t
+  :bind ("C-0" . ace-jump-mode))
 
 ;;; ** Magit
 
-(require 'magit)
-(global-set-key (kbd "C-c g") 'magit-status)
+(use-package magit
+  :ensure t
+  :bind ("C-c g" . magit-status))
 
 ;;; ** undo-tree
 
 ;;; More powerful undo and redo with undo-tree. Don't show minor mode
 ;;; in mode line.
 
-(require 'undo-tree)
-(global-undo-tree-mode)
-(diminish 'undo-tree-mode)
+(use-package undo-tree
+  :ensure t
+  :config (progn
+	    (global-undo-tree-mode 1)
+	    (diminish 'undo-tree-mode)))
 
 ;;; ** paredit
 
 (require 'paredit)
 
 ;;; Rebind paredit barf and slurp keys to what I find more natural.
+
+(use-package paredit
+  :ensure t)
 
 (define-key paredit-mode-map (kbd "M-]") 'paredit-forward-slurp-sexp)
 (define-key paredit-mode-map (kbd "M-[") 'paredit-backward-slurp-sexp)
