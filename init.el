@@ -121,59 +121,9 @@ override.")
   (package-refresh-contents)
   (package-install 'use-package))
 
-(require 'use-package)
-
-;;; TODO: The following are replaced by use-package and can be deleted
-;;; when it's working.
-
-;; ;;; ** Define default packages
-
-;; (defvar mike-extra-packages '()
-;;   "Additional packages to install/load.  Set in before-init.el.")
-
-;; (defvar mike-packages '(magit
-;;                         autopair
-;;                         paredit
-;;                         undo-tree
-;;                         auto-complete
-;;                         projectile
-;;                         flx-ido
-;;                         ido-vertical-mode
-;;                         diminish
-;;                         exec-path-from-shell
-;;                         web-mode
-;;                         org
-;;                         helm
-;; 			helm-projectile
-;; 			ac-helm
-;;                         geiser
-;;                         ac-geiser
-;; 			solarized-theme
-;; 			elisp-slime-nav
-;; 			ace-jump-mode
-;; 			anzu)
-;;   "Default packages to install/load.  Set in before-init.el to
-;; override.  Overriding this may cause an error.")
-
-;; ;;; ** Install default packages
-
-;; ;;; Unless all packages are already installed, refresh the repository
-;; ;;; package list and install any uninstalled packages.
-
-;; (let ((packages (append mike-packages mike-extra-packages)))
-;;   (unless
-;;       ;; All packages are installed
-;;       (cl-loop for pkg in packages
-;; 	       when (not (or (package-installed-p pkg)
-;; 			     (locate-library (symbol-name pkg))))
-;; 	       do (cl-return nil)
-;; 	       finally (cl-return t))
-;;     (message "%s" "Refreshing package database...")
-;;     (package-refresh-contents)
-;;     (dolist (pkg packages)
-;;       (when (not (or (package-installed-p pkg)
-;; 		     (locate-library (symbol-name pkg))))
-;;         (package-install pkg)))))
+(eval-when-compile (require 'use-package))
+(require 'diminish)
+(require 'bind-key)
 
 ;;; * exec-path-from-shell
 
@@ -315,14 +265,6 @@ override.")
 ;;; These are external libraries and packages to enhance Emacs. I add
 ;;; my own utility functions in a later section.
 
-;;; ** Diminish
-
-;;; Diminish removes clutter from the mode line. I use it to hide many
-;;; global minor modes.
-
-(use-package diminish
-  :ensure t)
-
 ;;; ** Anzu mode
 
 ;;; Anzu mode displays the number of matching searches when doing an
@@ -331,13 +273,13 @@ override.")
 
 (use-package anzu
   :ensure t
+  :diminish anzu-mode
   ;; Almost always `query-replace-regexp' is more useful than
   ;; `query-replace'.  Bind `anzu-query-replace-regexp' to M-% to use
   ;; the anzu version.
   :bind ("M-%" . anzu-query-replace-regexp)
   :config (progn
-	    (global-anzu-mode 1)
-	    (diminish 'anzu-mode)))
+	    (global-anzu-mode 1)))
 
 ;;; ** Ace jump mode
 
@@ -358,30 +300,32 @@ override.")
 
 (use-package undo-tree
   :ensure t
+  :diminish undo-tree-mode
   :config (progn
-	    (global-undo-tree-mode 1)
-	    (diminish 'undo-tree-mode)))
+	    (global-undo-tree-mode 1)))
 
 ;;; ** paredit
-
-(require 'paredit)
 
 ;;; Rebind paredit barf and slurp keys to what I find more natural.
 
 (use-package paredit
-  :ensure t)
-
-(define-key paredit-mode-map (kbd "M-]") 'paredit-forward-slurp-sexp)
-(define-key paredit-mode-map (kbd "M-[") 'paredit-backward-slurp-sexp)
-(define-key paredit-mode-map (kbd "M-}") 'paredit-forward-barf-sexp)
-(define-key paredit-mode-map (kbd "M-{") 'paredit-backward-barf-sexp)
+  :ensure t
+  :bind (("M-]" . paredit-forward-slurp-sexp)
+	 ("M-[" . paredit-backward-slurp-sexp)
+	 ("M-}" . paredit-forward-barf-sexp)
+	 ("M-{" . paredit-backward-barf-sexp))
+  :init (progn (add-hook 'emacs-lisp-mode-hook #'enable-paredit-mode)
+	       (add-hook 'ielm-mode-hook #'enable-paredit-mode)
+	       (add-hook 'geiser-repl-mode-hook #'enable-paredit-mode)
+	       (add-hook 'scheme-mode-hook #'enable-paredit-mode)))
 
 ;;; ** Recent files
 
 ;;; Keep track of recent files.  Very handy.
 
-(require 'recentf)
-(recentf-mode)
+(use-package recentf
+  :ensure t
+  :config (recentf-mode))
 
 ;;; ** Autopair
 
@@ -389,9 +333,14 @@ override.")
 ;;; disable it where we don't want it. Don't show minor mode in mode
 ;;; line.
 
-(require 'autopair)
-(autopair-global-mode 1)
-(diminish 'autopair-mode)
+(defun mike-turn-off-autopair-mode ()
+  (when (fboundp #'autopair-mode) (autopair-mode 0)))
+
+(use-package autopair
+  :ensure t
+  :diminish autopair-mode
+  :config (progn (add-hook 'paredit-mode-hook #'mike-turn-off-autopair-mode)
+		 (autopair-global-mode 1)))
 
 ;;; ** Hippie expand
 
@@ -406,190 +355,120 @@ override.")
 ;;; ** Autocomplete
 
 ;;; We want smart auto-completion.
-(require 'auto-complete-config)
-(ac-config-default)
 
-;;; Don't show minor mode in mode line.
-(diminish 'auto-complete-mode)
-
-;;; Suggest auto-complete candidates with helm instead of a popup with
-;;; C-:.
-
-(require 'ac-helm)
-(global-set-key (kbd "C-:") 'ac-complete-with-helm)
-(define-key ac-complete-mode-map (kbd "C-:") 'ac-complete-with-helm)
+(use-package auto-complete
+  :ensure t
+  :diminish auto-complete-mode
+  :config (progn
+	    (require 'auto-complete-config)
+	    (ac-config-default)))
 
 ;;; ** Helm
 
 ;;; Helm is a navigation utility I'm trying out.  From URL
 ;;; `http://tuhdo.github.io/helm-intro.html'.
 
-(require 'helm)
-(require 'helm-config)
+(use-package helm
+  :ensure t
+  :diminish helm-mode
+  :bind (("C-c h" . helm-command-prefix)
+	 ("M-x" . helm-M-x)
+	 ("M-y" . helm-show-kill-ring)
+	 ("C-x b" . helm-mini)
+	 ("C-x C-f" . helm-find-files))
+  :init
+  (progn
+    (require 'helm-config)
+    (setq
+     ;; Open helm buffer inside current window, not occupy whole other window.
+     helm-split-window-in-side-p t
+     ;; Move to end or beginning of source when reaching top or bottom of source.
+     helm-move-to-line-cycle-in-source t
+     ;; Search for library in `require' and `declare-function' sexp.
+     helm-ff-search-library-in-sexp t
+     ;; Scroll 8 lines in other window using M-<next>/M-<prior>
+     helm-scroll-amount 8
+     ;; Use recent files.
+     helm-ff-file-name-history-use-recentf t
+     ;; enable fuzzy matching
+     helm-M-x-fuzzy-match t
+     helm-buffers-fuzzy-matching t
+     helm-recentf-fuzzy-match t))
+  :config
+  (progn
+    ;; If we have access to curl, use it for Google suggestions.
+    (when (executable-find "curl")
+      (setq helm-google-suggest-use-curl-p t))
+    ;; Rebind tab to run persistent action.
+    (define-key helm-map (kbd "<tab>") 'helm-execute-persistent-action)
+    ;; Make tab work in terminal.
+    (define-key helm-map (kbd "C-i") 'helm-execute-persistent-action)
+    ;; List actions using C-z
+    (define-key helm-map (kbd "C-z") 'helm-select-action)
+    ;; Start helm-mode globally
+    (helm-mode 1)))
 
-;;; *** Helm settings
+;;; Suggest auto-complete candidates with helm instead of a popup with
+;;; C-:.
 
-(setq
- ;; Open helm buffer inside current window, not occupy whole other window.
- helm-split-window-in-side-p t
- ;; Move to end or beginning of source when reaching top or bottom of source.
- helm-move-to-line-cycle-in-source t
- ;; Search for library in `require' and `declare-function' sexp.
- helm-ff-search-library-in-sexp t
- ;; Scroll 8 lines in other window using M-<next>/M-<prior>
- helm-scroll-amount 8
- ;; Use recent files.
- helm-ff-file-name-history-use-recentf t)
-
-;;; If we have access to curl, use it for Google suggestions.
-(when (executable-find "curl")
-  (setq helm-google-suggest-use-curl-p t))
-
-;;; *** Helm keybindings
-
-;;; Start helm with C-c h.
-
-(global-set-key (kbd "C-c h") 'helm-command-prefix)
-(global-unset-key (kbd "C-x c"))
-
-;;; Rebind tab to run persistent action.
-(define-key helm-map (kbd "<tab>") 'helm-execute-persistent-action)
-;;; Make tab work in terminal.
-(define-key helm-map (kbd "C-i") 'helm-execute-persistent-action)
-
-;;; List actions using C-z
-(define-key helm-map (kbd "C-z") 'helm-select-action)
-
-;;; *** helm-M-x
-
-;;; Bind M-x to helm-M-x.
-
-(global-set-key (kbd "M-x") 'helm-M-x)
-
-;;; Enable fuzzy matching.
-
-(setq helm-M-x-fuzzy-match t)
-
-;;; *** helm-show-kill-ring
-
-;;; Use Helm to show the kill ring.
-
-(global-set-key (kbd "M-y") 'helm-show-kill-ring)
-
-;;; *** helm-mini
-
-(global-set-key (kbd "C-x b") 'helm-mini)
-
-;;; enable fuzzy matching.
-
-(setq helm-buffers-fuzzy-matching t
-      helm-recentf-fuzzy-match t)
-
-;;; *** helm-find-files
-
-;;; Use C-x C-f to use helm to find files.
-
-(global-set-key (kbd "C-x C-f") 'helm-find-files)
-
-;;; *** Start helm-mode globally
-
-(helm-mode 1)
-
-;;; Don't show minor mode in mode line.
-
-(diminish 'helm-mode)
+(use-package ac-helm
+  :ensure t
+  :bind (("C-;" . ac-complete-with-helm)))
 
 ;;; ** Projectile
 
 ;;; Projectile brings fast and useful project management to Emacs.
 ;;; Don't show minor mode in mode line.
 
-(require 'projectile)
-(projectile-global-mode 1)
-(diminish 'projectile-mode)
+(use-package projectile
+  :ensure t
+  :diminish projectile-mode
+  :config
+  (progn
+    (projectile-global-mode 1)))
 
 ;;; Use helm projectile.
 
-(require 'helm-projectile)
-(setq projectile-completion-system 'helm)
-
-;;; ** ido
-
-;;; Enable ido everywhere, flexible matching, the easier to use
-;;; vertical ido mode which presents options in a list much like a
-;;; dropdown menu.
-
-(require 'ido)
-(require 'flx-ido)
-(require 'ido-vertical-mode)
-
-;;; Disable ido-mode for now in favor of helm.
-
-;; (ido-mode 1)
-;; (ido-vertical-mode 1)
-;; (flx-ido-mode 1)
+(use-package helm-projectile
+  :ensure t
+  :init
+  (setq
+   projectile-completion-system 'helm))
 
 ;;; * Language and interpreter hooks
 
-;;; Don't display eldoc minor mode in the mode line.
-
-(diminish 'eldoc-mode)
-
 ;;; ** Elisp
 
-(require 'eldoc)
-(require 'elisp-slime-nav)
+(use-package eldoc
+  :diminish eldoc-mode
+  :init (progn (add-hook 'emacs-lisp-mode-hook #'turn-on-eldoc-mode)
+	       (add-hook 'ielm-mode-hook #'turn-on-eldoc-mode)))
 
-(defun mike-emacs-lisp-mode-hook ()
-  "Disable autopair and enable paredit for Elisp and IELM."
-  (autopair-mode 0)
-  (paredit-mode 1))
-
-;;; Add hooks for elisp files and IELM repl.
-
-(dolist (hook '(emacs-lisp-mode-hook ielm-mode-hook))
-  (add-hook hook 'mike-emacs-lisp-mode-hook)
-  ;; Show current function information in message area.
-  (add-hook hook 'turn-on-eldoc-mode)
-  ;; Turn on elisp slime navigation.  Navigate to function definition
-  ;; with M-. and jump back with M-,
-  (add-hook hook 'elisp-slime-nav-mode))
+(use-package elisp-slime-nav
+  :ensure t
+  :init (progn (add-hook 'emacs-lisp-mode-hook #'elisp-slime-nav-mode)
+	       (add-hook 'ielm-mode-hook #'elisp-slime-nav-mode)))
 
 ;;; ** Scheme
 
 ;;; Geiser customizations (Scheme Slime-like environment)
 
-(require 'geiser)
-
-;;; Disable read-only prompt in Geiser. The read-only prompt doesn't
-;;; play nicely with custom REPLs such as in SICP.
-(defun mike-geiser-turn-off-read-only-prompt ()
-  "Turn off read-only prompt in `geiser'."
+(defun mike-toggle-geiser-repl-read-only-prompt ()
+  "Toggle read-only prompt in `geiser'."
   (interactive)
-  (setq geiser-repl-read-only-prompt-p nil))
+  (when (boundp 'geiser-repl-read-only-prompt-p)
+    (setq geiser-repl-read-only-prompt-p (not geiser-repl-read-only-prompt-p))))
 
-(defun mike-geiser-mode-hook ()
-  "Disable autopair and enable paredit for Scheme code when
-interacting with the geiser REPL."
-  (autopair-mode 0)
-  (paredit-mode 1))
-
-(add-hook 'geiser-repl-mode-hook 'mike-geiser-mode-hook)
-
-(defun mike-scheme-mode-hook ()
-  "Disable autopair and enable paredit for Scheme code."
-  (autopair-mode 0)
-  (paredit-mode 1))
-
-(add-hook 'scheme-mode-hook 'mike-scheme-mode-hook)
+(use-package geiser
+  :ensure t)
 
 ;;; Enable auto-complete for geiser.
 
-(require 'ac-geiser)
-
-(add-hook 'geiser-mode-hook 'ac-geiser-setup)
-(add-hook 'geiser-repl-mode-hook 'ac-geiser-setup)
-(add-to-list 'ac-modes 'geiser-repl-mode-hook)
+(use-package ac-geiser
+  :ensure t
+  :init (progn (add-hook 'geiser-mode-hook #'ac-geiser-setup)
+	       (add-hook 'geiser-repl-mode-hook #'ac-geiser-setup)
+	       (add-to-list 'ac-modes 'geiser-repl-mode-hook)))
 
 ;;; * Text mode settings
 
@@ -699,8 +578,8 @@ From URL `http://whattheemacsd.com/'."
 
 (message "Emacs startup in %ds"
          (let ((time (current-time)))
-           (let ((current-hi (first time))
-                 (current-lo (second time))
-                 (startup-hi (first mike-emacs-load-start-time))
-                 (startup-lo (second mike-emacs-load-start-time)))
+           (let ((current-hi (cl-first time))
+                 (current-lo (cl-second time))
+                 (startup-hi (cl-first mike-emacs-load-start-time))
+                 (startup-lo (cl-second mike-emacs-load-start-time)))
              (- (+ current-hi current-lo) (+ startup-hi startup-lo)))))
